@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #07080B;
+  --color-surface: #0E1015;
+  --color-surface-2: #14171E;
+  --color-border: #1E222C;
+  --color-border-strong: #2A2F3C;
+  --color-foreground: #F2F2EE;
+  --color-muted: #797F8E;
+  --color-muted-strong: #A8AEBC;
+
+  --color-accent: #2F7BFF;
+  --color-accent-hover: #4A8FFF;
+  --color-accent-soft: #1B3766;
+
+  --color-gold: #F4B53F;
+  --color-mint: #34E0A1;
+  --color-rose: #FF5A6B;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-geist-sans);
+
+  --shadow-glow: 0 0 80px -20px rgba(47, 123, 255, 0.45);
+  --shadow-glow-gold: 0 0 60px -15px rgba(244, 181, 63, 0.35);
+}
+
+html, body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 800px 600px at 80% -10%, rgba(47, 123, 255, 0.08), transparent 60%),
+    radial-gradient(ellipse 600px 400px at 10% 30%, rgba(244, 181, 63, 0.04), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(47, 123, 255, 0.35);
+  color: #ffffff;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #07080B; }
+::-webkit-scrollbar-thumb { background: #1E222C; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #2A2F3C; }
+
+.tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+.grain {
+  position: relative;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+.divider-grid {
+  background-image:
+    linear-gradient(to right, rgba(30, 34, 44, 0.5) 1px, transparent 1px);
+  background-size: 1fr 100%;
+}
+
+@keyframes scroll-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-scroll-x { animation: scroll-x 40s linear infinite; }
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.animate-pulse-ring { animation: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+@keyframes flow-dash {
+  to { stroke-dashoffset: -200; }
+}
+.animate-flow { animation: flow-dash 3s linear infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.text-shimmer {
+  background: linear-gradient(90deg, #797F8E 0%, #F2F2EE 50%, #797F8E 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s linear infinite;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(180deg, #F4B53F 0%, #FF8A3F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-blue {
+  background: linear-gradient(180deg, #FFFFFF 0%, #6FA5FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hairline { border-color: rgba(30, 34, 44, 0.8); }
+
+.btn-primary {
+  background: linear-gradient(180deg, #4A8FFF 0%, #2563EB 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 10px 24px -8px rgba(47, 123, 255, 0.6);
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 14px 30px -8px rgba(47, 123, 255, 0.75);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
