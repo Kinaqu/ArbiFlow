@@ -6,7 +6,7 @@ import { Plus, Minus } from "lucide-react";
 const faqs = [
   {
     q: "Is ArbiFlow a custodian?",
-    a: "No. ArbiFlow is read-only by default and never takes custody. When you execute a strategy, your wallet signs the transaction directly.",
+    a: "No. Scanning is signature-free. When you deploy, your wallet signs the transaction and funds route directly to the protocol. ArbiFlow never holds custody and has no admin keys over your positions.",
   },
   {
     q: "What chains do you support?",
@@ -22,7 +22,7 @@ const faqs = [
   },
   {
     q: "Do you take a fee?",
-    a: "Scanning is free. There is no ArbiFlow token. Execution flows charge a small, disclosed performance fee in the future — never on your principal, only on incremental yield.",
+    a: "Scanning is free. There is no ArbiFlow token. On deploys, we charge a small, disclosed performance fee on incremental yield only — never on your principal, never on the amount you deploy.",
   },
   {
     q: "What data sources do you use?",

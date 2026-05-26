@@ -1,38 +1,46 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Plug, ScanLine, Sparkles } from "lucide-react";
+import { Plug, ScanLine, Sparkles, Rocket } from "lucide-react";
 
 const steps = [
   {
     n: "01",
     icon: Plug,
-    title: "Connect read-only",
-    body: "Paste an address or use WalletConnect. We never request signatures, transfers, or approvals to scan.",
+    title: "Connect wallet",
+    body: "WalletConnect or browser wallet. The free scan kicks off automatically — no commitment, no signature required to look.",
     detail: "0x4a2f…f8c1",
-    detailLabel: "address attached",
+    detailLabel: "connected",
   },
   {
     n: "02",
     icon: ScanLine,
-    title: "Engine scans the chain",
-    body: "Balances, current positions, and ~40 yield venues are pulled in parallel. The scoring model runs in milliseconds.",
+    title: "Scan in stages",
+    body: "Balances, idle capital, ~40 yield venues, scoring — each stage streams in milliseconds. You see the math as it computes.",
     detail: "42 / 42",
-    detailLabel: "protocols evaluated",
+    detailLabel: "protocols scored",
   },
   {
     n: "03",
     icon: Sparkles,
-    title: "Strategies, ranked honestly",
-    body: "You get an ordered list with the math behind every score, gas-adjusted for your wallet size and tolerance.",
+    title: "Strategies, ranked",
+    body: "An ordered list with the full breakdown behind every score. Gas-adjusted for your wallet size and risk tolerance.",
     detail: "+$184/yr",
-    detailLabel: "estimated uplift",
+    detailLabel: "uplift on top pick",
+  },
+  {
+    n: "04",
+    icon: Rocket,
+    title: "Deploy in one click",
+    body: "Pick a strategy, hit deploy. ArbiFlow builds the tx — your wallet signs. Funds go straight to the protocol, never to us.",
+    detail: "1 sig",
+    detailLabel: "to execute",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="relative border-t border-border">
+    <section id="how" className="relative border-t border-border">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-32">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16">
           <div className="max-w-2xl">
@@ -40,19 +48,20 @@ export function HowItWorks() {
               [03] · The flow
             </div>
             <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-              Three steps. <span className="text-muted">Under two seconds.</span>
+              Four steps.{" "}
+              <span className="text-muted">Wallet to yield in under 30 seconds.</span>
             </h2>
           </div>
           <p className="text-base text-muted-strong max-w-md">
-            No onboarding. No KYC. No token. The entire scan loop is free and
-            runs on public Arbitrum data.
+            Scan is free. Deploy when you&apos;re ready. Non‑custodial throughout —
+            funds never leave your wallet until you sign.
           </p>
         </div>
 
         <div className="relative">
           {/* Connecting beam (desktop) */}
           <svg
-            className="hidden lg:block absolute top-12 left-[16%] right-[16%] h-px -z-0"
+            className="hidden lg:block absolute top-12 left-[10%] right-[10%] h-px -z-0"
             viewBox="0 0 100 1"
             preserveAspectRatio="none"
           >
@@ -77,7 +86,7 @@ export function HowItWorks() {
             />
           </svg>
 
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-10 relative">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 relative">
             {steps.map((s, i) => {
               const Icon = s.icon;
               return (

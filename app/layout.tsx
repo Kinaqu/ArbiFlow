@@ -15,14 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ArbiFlow — Capital intelligence for Arbitrum",
+  title: "ArbiFlow — Deploy idle capital into optimized DeFi yield",
   description:
-    "Turn idle crypto into optimized DeFi yield on Arbitrum. ArbiFlow scans your wallet and recommends risk-adjusted strategies with real net APY after gas.",
+    "ArbiFlow scans your Arbitrum wallet, ranks every yield opportunity by risk-adjusted, gas-aware net APY, and deploys into the top-scoring strategy in one signature. Non-custodial.",
   metadataBase: new URL("https://arbiflow.xyz"),
   openGraph: {
-    title: "ArbiFlow — Capital intelligence for Arbitrum",
+    title: "ArbiFlow — Deploy idle capital into optimized DeFi yield",
     description:
-      "Wallet-native engine that ranks DeFi yield strategies on Arbitrum by risk-adjusted, gas-aware net return.",
+      "Connect your Arbitrum wallet, see ranked strategies, deploy in one click. Non-custodial — you sign every transaction.",
     type: "website",
   },
 };
