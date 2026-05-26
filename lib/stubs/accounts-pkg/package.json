@@ -1,0 +1,7 @@
+{
+  "name": "accounts",
+  "version": "0.12.99",
+  "private": true,
+  "main": "index.js",
+  "description": "Local stub for wagmi's optional 'accounts' peer (Tempo connector). Resolves to an empty module so wagmi's import('accounts').catch(...) takes the fallback path. Version satisfies @wagmi/core's peerOptional range (~0.12)."
+}

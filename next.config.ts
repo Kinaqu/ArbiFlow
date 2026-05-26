@@ -3,16 +3,19 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
-      // wagmi's Tempo connector dynamically imports an optional "accounts"
-      // module that doesn't exist as a real package. Without this alias
-      // Turbopack treats the import().catch() as a hard module-not-found.
+      // wagmi's Tempo connector does `import('accounts').catch(...)` against
+      // an optional peer. The `overrides` block in package.json points the
+      // `accounts` name at a local stub package so this resolves to {} at
+      // build *and* runtime, on every resolver.
       accounts: "./lib/stubs/empty.js",
     },
   },
-  // Also externalize from the server bundle so the dynamic import resolves
-  // at runtime against the actual Node module system (where it'll fall back
-  // to the .catch handler as wagmi intends).
-  serverExternalPackages: ["@wagmi/core", "@reown/appkit-adapter-wagmi"],
+  // Intentionally NOT using `serverExternalPackages` for the wagmi/Reown
+  // stack. Externalizing pushes module loading to Vercel's ESM runtime,
+  // which is strict about named exports — and @reown/appkit-adapter-wagmi
+  // imports a symbol from @walletconnect/logger that the installed version
+  // no longer exports, killing every SSR render with a SyntaxError. Letting
+  // Next bundle them inline avoids the runtime mismatch.
 };
 
 export default nextConfig;
