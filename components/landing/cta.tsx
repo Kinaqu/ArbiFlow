@@ -32,21 +32,22 @@ export function CTA() {
           <div className="relative grid lg:grid-cols-12 gap-10 p-10 lg:p-16">
             <div className="lg:col-span-7">
               <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-5">
-                [→] · Run a scan
+                [→] · Scan &amp; deploy
               </div>
               <h2 className="text-4xl lg:text-6xl tracking-[-0.03em] font-semibold leading-[1.02]">
-                See what your wallet is{" "}
-                <span className="gradient-text-gold">missing.</span>
+                From idle to deployed in{" "}
+                <span className="gradient-text-gold">one signature.</span>
               </h2>
               <p className="mt-6 text-lg text-muted-strong max-w-xl leading-relaxed">
-                Connect read-only. Get a ranked, gas-adjusted list in under two
-                seconds. Decide what to deploy — or don&apos;t. No commitment.
+                Connect your wallet. Free scan in under two seconds. Deploy the
+                top‑scoring strategy with a single tap — your wallet, your
+                signature, your funds.
               </p>
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <button className="btn-primary inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-white">
                   <Zap className="w-4 h-4" />
-                  Connect wallet
+                  Connect &amp; scan free
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button className="btn-ghost inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-foreground">
@@ -55,9 +56,9 @@ export function CTA() {
               </div>
 
               <div className="mt-7 flex flex-wrap gap-6 text-xs text-muted">
-                <span>✓ Read-only · no signatures</span>
-                <span>✓ Free · no token</span>
-                <span>✓ Arbitrum One native</span>
+                <span>✓ Free scan · no signature</span>
+                <span>✓ You sign every deploy</span>
+                <span>✓ No token · no custody</span>
               </div>
             </div>
 
@@ -99,6 +100,10 @@ export function CTA() {
                     → running scorer
                     <span className="text-mint"> ✓</span>
                   </div>
+                  <div className="text-muted-strong">
+                    → ranking strategies
+                    <span className="text-mint"> ✓</span>
+                  </div>
                   <div className="pt-2 border-t hairline mt-3">
                     <div className="text-muted text-xs mb-1">
                       idle: <span className="gradient-text-gold">$2,340</span>
@@ -108,6 +113,15 @@ export function CTA() {
                     </div>
                     <div className="text-foreground">
                       best score → <span className="text-accent">Aave v3 USDC</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-muted text-xs">
+                        ready to deploy <span className="text-muted-strong">· 1 sig</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-gold border border-gold/40 bg-gold/10">
+                        Deploy
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Wallet, Cpu, ArrowUpRight } from "lucide-react";
+import { Wallet, Cpu, ArrowUpRight, ArrowRight, Check } from "lucide-react";
+
+const stages = [
+  { label: "balances loaded", delay: 0.6 },
+  { label: "idle capital detected", delay: 0.85 },
+  { label: "42 protocols evaluated", delay: 1.1 },
+  { label: "scoring complete", delay: 1.35 },
+];
 
 const tokens = [
   { sym: "USDC", bal: "1,840.22", idle: true, color: "#2775CA" },
@@ -147,6 +154,22 @@ export function EngineVisual() {
           </span>
         </div>
 
+        {/* Stage log */}
+        <div className="mb-3 space-y-1">
+          {stages.map((s) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: s.delay, duration: 0.35 }}
+              className="flex items-center justify-between text-[10px] font-mono"
+            >
+              <span className="text-muted">→ {s.label}</span>
+              <Check className="w-3 h-3 text-mint" />
+            </motion.div>
+          ))}
+        </div>
+
         {/* Mini formula bars */}
         <div className="grid grid-cols-4 gap-1.5 mb-1">
           {[
@@ -197,7 +220,7 @@ export function EngineVisual() {
       </svg>
 
       {/* Opportunities */}
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 mb-3">
         {opps.map((o, i) => (
           <motion.div
             key={o.name}
@@ -238,6 +261,46 @@ export function EngineVisual() {
           </motion.div>
         ))}
       </div>
+
+      {/* Deploy block */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9 }}
+        className="relative bg-surface-2 border border-gold/40 rounded-lg p-4 overflow-hidden"
+      >
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none opacity-70"
+          style={{
+            background:
+              "radial-gradient(ellipse 280px 120px at 90% 0%, rgba(244, 181, 63, 0.14), transparent 70%)",
+          }}
+        />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-gold/90 mb-1.5">
+              ready to deploy
+            </div>
+            <div className="text-xs text-foreground truncate">
+              <span className="font-mono tabular">1,840 USDC</span>
+              <span className="text-muted mx-1.5">→</span>
+              <span className="font-medium">Aave v3</span>
+            </div>
+            <div className="text-[10px] font-mono text-muted mt-1">
+              <span className="text-mint">+$184/yr</span>
+              <span className="mx-1.5">·</span>1 signature
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white whitespace-nowrap flex-shrink-0"
+          >
+            Deploy
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }

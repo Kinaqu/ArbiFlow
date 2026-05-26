@@ -1,17 +1,17 @@
 "use client";
 
-import { Check, X, Eye, Key, Wallet, Send } from "lucide-react";
+import { Eye, Key, Wallet, Send, Cpu, ArrowRight } from "lucide-react";
 
 const can = [
-  { icon: Eye, label: "Read your public balances" },
-  { icon: Wallet, label: "Identify open DeFi positions" },
-  { icon: Check, label: "Compute scores entirely client-side" },
+  { icon: Eye, label: "Scan your public balances (no signature)" },
+  { icon: Cpu, label: "Build transactions client-side" },
+  { icon: ArrowRight, label: "Route signed txs straight to the protocol" },
 ];
 
 const cant = [
-  { icon: Key, label: "Request token approvals" },
-  { icon: Send, label: "Move, swap, or stake your funds" },
-  { icon: X, label: "Store your seed, keys, or signatures" },
+  { icon: Key, label: "Hold or store your private keys" },
+  { icon: Send, label: "Move funds without your signature" },
+  { icon: Wallet, label: "Take custody at any step" },
 ];
 
 export function Security() {
@@ -23,13 +23,14 @@ export function Security() {
             [07] · Trust by design
           </div>
           <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-            We can read.{" "}
-            <span className="text-muted">We cannot move.</span>
+            You sign.{" "}
+            <span className="text-muted">We never custody.</span>
           </h2>
           <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-            Scanning is read-only. When you decide to execute a strategy,
-            transactions are constructed in the browser and you sign them
-            directly with your wallet. ArbiFlow never holds custody.
+            Scanning is free and signature-less. When you deploy, transactions
+            are built in the browser and signed by your wallet. Funds route
+            directly to the protocol — ArbiFlow never holds custody and cannot
+            move a cent without your signature.
           </p>
         </div>
 
