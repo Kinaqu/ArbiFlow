@@ -1,17 +1,38 @@
+import Link from "next/link";
 import { Logo } from "./logo";
 
-const cols = [
+type Item = { label: string; href: string; external?: boolean };
+
+const cols: { title: string; items: Item[] }[] = [
   {
     title: "Product",
-    items: ["Engine", "Strategies", "Risk model", "Dashboard", "Changelog"],
+    items: [
+      { label: "Engine", href: "/engine" },
+      { label: "Strategies", href: "/strategies" },
+      { label: "Risk model", href: "/risk-model" },
+      { label: "Dashboard", href: "/app" },
+      { label: "Changelog", href: "/changelog" },
+    ],
   },
   {
     title: "Resources",
-    items: ["Docs", "API", "Methodology", "Open data", "Status"],
+    items: [
+      { label: "Docs", href: "/docs" },
+      { label: "API", href: "/api-docs" },
+      { label: "Methodology", href: "/methodology" },
+      { label: "Open data", href: "/open-data" },
+      { label: "Status", href: "/status" },
+    ],
   },
   {
     title: "Company",
-    items: ["About", "Twitter / X", "GitHub", "Contact", "Press kit"],
+    items: [
+      { label: "About", href: "/about" },
+      { label: "Twitter / X", href: "https://twitter.com/arbiflow", external: true },
+      { label: "GitHub", href: "https://github.com/arbiflow", external: true },
+      { label: "Contact", href: "/contact" },
+      { label: "Press kit", href: "/press-kit" },
+    ],
   },
 ];
 
@@ -37,16 +58,29 @@ export function Footer() {
                 {c.title}
               </div>
               <ul className="space-y-2.5">
-                {c.items.map((item) => (
-                  <li key={item}>
-                    <a
-                      href="#"
-                      className="text-sm text-muted hover:text-foreground transition-colors"
-                    >
-                      {item}
-                    </a>
-                  </li>
-                ))}
+                {c.items.map((item) =>
+                  item.external ? (
+                    <li key={item.label}>
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-muted hover:text-foreground transition-colors"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ) : (
+                    <li key={item.label}>
+                      <Link
+                        href={item.href}
+                        className="text-sm text-muted hover:text-foreground transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           ))}

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Lock } from "lucide-react";
 import { EngineVisual } from "./engine-visual";
+import { ConnectButton } from "@/components/wallet/connect-button";
 
 export function Hero() {
   return (
@@ -53,13 +54,10 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.25 }}
               className="mt-9 flex flex-wrap items-center gap-3"
             >
-              <a
-                href="#cta"
-                className="btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-white"
-              >
+              <ConnectButton size="md">
                 Connect wallet · scan &amp; deploy
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </ConnectButton>
               <a
                 href="#how"
                 className="btn-ghost inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-foreground"

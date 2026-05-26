@@ -1,13 +1,15 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Logo } from "./logo";
+import { ConnectButton } from "@/components/wallet/connect-button";
 
 const links = [
-  { label: "Engine", href: "#engine" },
-  { label: "Strategies", href: "#opportunities" },
-  { label: "Risk model", href: "#risk" },
-  { label: "Docs", href: "#" },
+  { label: "Engine", href: "/engine" },
+  { label: "Strategies", href: "/strategies" },
+  { label: "Risk model", href: "/risk-model" },
+  { label: "Docs", href: "/docs" },
 ];
 
 export function Nav() {
@@ -19,28 +21,25 @@ export function Nav() {
             <Logo />
             <nav className="hidden md:flex items-center gap-7">
               {links.map((l) => (
-                <a
+                <Link
                   key={l.label}
                   href={l.href}
                   className="text-sm text-muted hover:text-foreground transition-colors"
                 >
                   {l.label}
-                </a>
+                </Link>
               ))}
             </nav>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted">
               <span className="w-1 h-1 rounded-full bg-mint animate-pulse" />
-              block 287,402,118
+              arbitrum one · live
             </div>
-            <a
-              href="#cta"
-              className="btn-primary text-sm font-medium px-3.5 py-1.5 rounded-md text-white flex items-center gap-1.5"
-            >
+            <ConnectButton size="sm">
               Connect wallet
               <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+            </ConnectButton>
           </div>
         </div>
       </div>

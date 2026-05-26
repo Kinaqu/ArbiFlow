@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
+import Link from "next/link";
+import { ConnectButton } from "@/components/wallet/connect-button";
 
 export function CTA() {
   return (
@@ -45,14 +47,17 @@ export function CTA() {
               </p>
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
-                <button className="btn-primary inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-white">
+                <ConnectButton size="lg">
                   <Zap className="w-4 h-4" />
                   Connect &amp; scan free
                   <ArrowRight className="w-4 h-4" />
-                </button>
-                <button className="btn-ghost inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-foreground">
+                </ConnectButton>
+                <Link
+                  href="/app?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+                  className="btn-ghost inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-foreground"
+                >
                   Try with sample wallet
-                </button>
+                </Link>
               </div>
 
               <div className="mt-7 flex flex-wrap gap-6 text-xs text-muted">
