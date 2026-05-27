@@ -1,3 +1,5 @@
+"use client";
+
 import { Sparkles } from "lucide-react";
 
 export function IdleBanner({
@@ -36,15 +38,16 @@ export function IdleBanner({
         <div className="lg:col-span-5 flex lg:justify-end">
           <button
             type="button"
-            disabled
-            className="btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-white opacity-60 cursor-not-allowed"
-            title="Strategy ranking arrives in Phase 2"
+            onClick={() =>
+              document
+                .getElementById("opportunities")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-white"
+            title="Jump to ranked opportunities"
           >
             <Sparkles className="w-4 h-4" />
             Generate strategies
-            <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/15">
-              soon
-            </span>
           </button>
         </div>
       </div>

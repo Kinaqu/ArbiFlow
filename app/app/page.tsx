@@ -7,7 +7,7 @@ import { useScan } from "@/hooks/use-scan";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { IdleBanner } from "@/components/app/idle-banner";
 import { BalanceTable } from "@/components/app/balance-table";
-import { StrategiesComingSoon } from "@/components/app/strategies-coming-soon";
+import { Opportunities } from "@/components/app/opportunities";
 
 export default function AppPage() {
   const searchParams = useSearchParams();
@@ -109,7 +109,7 @@ export default function AppPage() {
               </div>
               <BalanceTable tokens={data.tokens} />
             </section>
-            <StrategiesComingSoon />
+            <Opportunities scan={data} />
           </>
         )}
       </div>
