@@ -20,6 +20,21 @@ const CURATED_PROJECTS = new Set([
   "compound-v3",
 ]);
 
+// Mirror of lib/portal.ts — keep in sync.
+const PORTAL_BASE_CATEGORY = {
+  "aave-v3": "lending",
+  "morpho-blue": "lending",
+  "fluid-lending": "lending",
+  "compound-v3": "lending",
+  pendle: "fixed-yield",
+};
+const PORTAL_PROJECTS = new Set(Object.keys(PORTAL_BASE_CATEGORY));
+const LST_SYMBOLS = new Set([
+  "WSTETH", "WEETH", "RSETH", "EZETH", "STETH", "RETH", "CBETH", "ETH+",
+]);
+
+const ICON_BASE = "/icons/protocols";
+
 const PROJECT_LABELS = {
   "aave-v3": "Aave V3",
   "radiant-v2": "Radiant V2",
@@ -59,13 +74,20 @@ function normalize(raw) {
     raw.predictions && raw.predictions.predictedClass === "Stable/Up"
       ? Number(raw.predictions.predictedProbability ?? 0) / 100
       : 0;
+  const symbols = parseSymbols(raw.symbol);
+  const portalFeatured = PORTAL_PROJECTS.has(raw.project);
+  let portalCategory = null;
+  if (portalFeatured) {
+    const isLst = symbols.some((s) => LST_SYMBOLS.has(s));
+    portalCategory = isLst ? "liquid-staking" : PORTAL_BASE_CATEGORY[raw.project];
+  }
   return {
     id: raw.pool,
     project: raw.project,
     projectLabel: labelFor(raw.project),
     chain: "Arbitrum",
     symbol: raw.symbol,
-    symbols: parseSymbols(raw.symbol),
+    symbols,
     tvlUsd: Number(raw.tvlUsd ?? 0),
     apy,
     apyBase,
@@ -75,6 +97,9 @@ function normalize(raw) {
     exposure: raw.exposure === "multi" ? "multi" : "single",
     predictionUp,
     tier,
+    iconPath: `${ICON_BASE}/${raw.project}.png`,
+    portalFeatured,
+    portalCategory,
   };
 }
 
@@ -83,10 +108,16 @@ function selectPools(rawPools) {
 
   const core = arb.filter((p) => CURATED_PROJECTS.has(p.project));
 
+  const portalExtra = arb.filter(
+    (p) =>
+      !CURATED_PROJECTS.has(p.project) && PORTAL_PROJECTS.has(p.project),
+  );
+
   const honorable = arb
     .filter(
       (p) =>
         !CURATED_PROJECTS.has(p.project) &&
+        !PORTAL_PROJECTS.has(p.project) &&
         Number(p.tvlUsd ?? 0) >= HONORABLE_MIN_TVL &&
         Number(p.apy ?? 0) <= HONORABLE_MAX_APY &&
         Number(p.apy ?? 0) > 0 &&
@@ -95,7 +126,7 @@ function selectPools(rawPools) {
     .sort((a, b) => Number(b.tvlUsd ?? 0) - Number(a.tvlUsd ?? 0))
     .slice(0, HONORABLE_LIMIT);
 
-  return [...core, ...honorable].map(normalize);
+  return [...core, ...portalExtra, ...honorable].map(normalize);
 }
 
 async function main() {

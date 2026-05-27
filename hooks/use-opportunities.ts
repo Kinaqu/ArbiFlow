@@ -17,22 +17,27 @@ async function fetchOpportunities(): Promise<OpportunitiesApiResponse> {
   return res.json() as Promise<OpportunitiesApiResponse>;
 }
 
-export function useOpportunities(scan: ScanResult | undefined) {
+export function useOpportunities(
+  scan: ScanResult | undefined,
+  enabled: boolean,
+) {
   const q = useQuery({
     queryKey: ["opportunities"],
     queryFn: fetchOpportunities,
+    enabled,
     staleTime: 5 * 60_000,
     retry: 1,
   });
 
   const data = useMemo<OpportunitiesResponse | undefined>(() => {
     if (!q.data) return undefined;
-    const { perToken, explore } = buildOpportunities(
+    const { perToken, portal, explore } = buildOpportunities(
       q.data.pools,
       scan ?? null,
     );
     return {
       perToken,
+      portal,
       explore,
       generatedAt: q.data.generatedAt,
       source: q.data.source,
