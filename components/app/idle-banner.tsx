@@ -1,17 +1,37 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { ArrowDown, Sparkles } from "lucide-react";
 
 export function IdleBanner({
   idleUsd,
   totalUsd,
   tokenCount,
+  generated,
+  onGenerate,
 }: {
   idleUsd: number;
   totalUsd: number;
   tokenCount: number;
+  generated: boolean;
+  onGenerate: () => void;
 }) {
   const pct = totalUsd > 0 ? Math.round((idleUsd / totalUsd) * 100) : 0;
+
+  const handleClick = () => {
+    if (!generated) {
+      onGenerate();
+      // Defer scroll to next frame so the section mounts first.
+      requestAnimationFrame(() => {
+        document
+          .getElementById("opportunities")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
+    }
+    document
+      .getElementById("opportunities")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border-strong bg-surface p-6 lg:p-8">
@@ -38,16 +58,24 @@ export function IdleBanner({
         <div className="lg:col-span-5 flex lg:justify-end">
           <button
             type="button"
-            onClick={() =>
-              document
-                .getElementById("opportunities")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            onClick={handleClick}
+            className={
+              generated
+                ? "btn-ghost inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-foreground"
+                : "btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-white"
             }
-            className="btn-primary inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-white"
-            title="Jump to ranked opportunities"
+            title={
+              generated
+                ? "Scroll to your ranked opportunities"
+                : "Score live Arbitrum yield opportunities for your idle capital"
+            }
           >
-            <Sparkles className="w-4 h-4" />
-            Generate strategies
+            {generated ? (
+              <ArrowDown className="w-4 h-4" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            {generated ? "View strategies" : "Generate strategies"}
           </button>
         </div>
       </div>

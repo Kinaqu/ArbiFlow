@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { Loader2 } from "lucide-react";
@@ -20,6 +21,7 @@ export default function AppPage() {
   const isDemo = !!demoAddress && !isConnected;
 
   const { data, isLoading, isError, error } = useScan(activeAddress);
+  const [generated, setGenerated] = useState(false);
 
   if (!activeAddress) {
     return (
@@ -102,6 +104,8 @@ export default function AppPage() {
               idleUsd={data.idleUsd}
               totalUsd={data.totalUsd}
               tokenCount={data.tokens.filter((t) => t.idle).length}
+              generated={generated}
+              onGenerate={() => setGenerated(true)}
             />
             <section className="space-y-4">
               <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
@@ -109,7 +113,7 @@ export default function AppPage() {
               </div>
               <BalanceTable tokens={data.tokens} />
             </section>
-            <Opportunities scan={data} />
+            {generated && <Opportunities scan={data} />}
           </>
         )}
       </div>

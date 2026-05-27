@@ -1,4 +1,9 @@
 import snapshotJson from "./data/arbitrum-pools-snapshot.json";
+import {
+  PORTAL_PROJECTS,
+  portalMetaFor,
+  type PortalCategory,
+} from "./portal";
 
 const CURATED_PROJECTS = new Set([
   "aave-v3",
@@ -10,6 +15,8 @@ const CURATED_PROJECTS = new Set([
   "curve-dex",
   "compound-v3",
 ]);
+
+const ICON_BASE = "/icons/protocols";
 
 const PROJECT_LABELS: Record<string, string> = {
   "aave-v3": "Aave V3",
@@ -44,6 +51,9 @@ export type NormalizedPool = {
   exposure: "single" | "multi";
   predictionUp: number;
   tier: PoolTier;
+  iconPath: string;
+  portalFeatured: boolean;
+  portalCategory: PortalCategory | null;
 };
 
 export type PoolFetchResult = {
@@ -97,13 +107,15 @@ function normalize(raw: RawPool): NormalizedPool {
     raw.predictions && raw.predictions.predictedClass === "Stable/Up"
       ? Number(raw.predictions.predictedProbability ?? 0) / 100
       : 0;
+  const symbols = parseSymbols(raw.symbol);
+  const { portalFeatured, portalCategory } = portalMetaFor(raw.project, symbols);
   return {
     id: raw.pool,
     project: raw.project,
     projectLabel: labelFor(raw.project),
     chain: "Arbitrum",
     symbol: raw.symbol,
-    symbols: parseSymbols(raw.symbol),
+    symbols,
     tvlUsd: Number(raw.tvlUsd ?? 0),
     apy: Number(raw.apy ?? 0),
     apyBase: Number(raw.apyBase ?? 0),
@@ -113,16 +125,24 @@ function normalize(raw: RawPool): NormalizedPool {
     exposure: raw.exposure === "multi" ? "multi" : "single",
     predictionUp,
     tier,
+    iconPath: `${ICON_BASE}/${raw.project}.png`,
+    portalFeatured,
+    portalCategory,
   };
 }
 
 function selectPools(rawPools: RawPool[]): NormalizedPool[] {
   const arb = rawPools.filter((p) => p.chain === "Arbitrum");
   const core = arb.filter((p) => CURATED_PROJECTS.has(p.project));
+  const portalExtra = arb.filter(
+    (p) =>
+      !CURATED_PROJECTS.has(p.project) && PORTAL_PROJECTS.has(p.project),
+  );
   const honorable = arb
     .filter(
       (p) =>
         !CURATED_PROJECTS.has(p.project) &&
+        !PORTAL_PROJECTS.has(p.project) &&
         Number(p.tvlUsd ?? 0) >= HONORABLE_MIN_TVL &&
         Number(p.apy ?? 0) > 0 &&
         Number(p.apy ?? 0) <= HONORABLE_MAX_APY &&
@@ -130,7 +150,7 @@ function selectPools(rawPools: RawPool[]): NormalizedPool[] {
     )
     .sort((a, b) => Number(b.tvlUsd ?? 0) - Number(a.tvlUsd ?? 0))
     .slice(0, HONORABLE_LIMIT);
-  return [...core, ...honorable].map(normalize);
+  return [...core, ...portalExtra, ...honorable].map(normalize);
 }
 
 function fromSnapshot(): PoolFetchResult {

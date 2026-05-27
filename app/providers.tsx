@@ -1,11 +1,12 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { WagmiProvider, type State } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
 import { arbitrum } from "@reown/appkit/networks";
 import { projectId, wagmiAdapter, wagmiConfig } from "@/lib/wagmi";
+import { installIdentityShim } from "@/lib/identity-shim";
 
 const metadata = {
   name: "ArbiFlow",
@@ -53,6 +54,10 @@ export function Providers({
         },
       }),
   );
+
+  useEffect(() => {
+    installIdentityShim();
+  }, []);
 
   return (
     <WagmiProvider config={wagmiConfig} initialState={initialState}>
