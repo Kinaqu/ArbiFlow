@@ -516,6 +516,35 @@ function SortHeader({
   );
 }
 
+function MinFilter({
+  label,
+  unit,
+  value,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 focus-within:border-accent">
+      <span className="text-[10px] font-mono uppercase tracking-wider text-muted whitespace-nowrap">
+        {label}
+      </span>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
+        placeholder="0"
+        className="w-12 bg-transparent text-sm text-right focus:outline-none placeholder:text-muted"
+      />
+      <span className="text-xs text-muted whitespace-nowrap">{unit}</span>
+    </div>
+  );
+}
+
 function ExploreTable({ pools }: { pools: ScoredPool[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -582,27 +611,23 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
             className={`${inputCls} pl-8 w-52`}
           />
         </div>
-        <input
-          type="number"
-          inputMode="decimal"
+        <MinFilter
+          label="min apy"
+          unit="%"
           value={minApy}
-          onChange={(e) => {
-            setMinApy(e.target.value);
+          onChange={(v) => {
+            setMinApy(v);
             resetPaging();
           }}
-          placeholder="Min APY %"
-          className={`${inputCls} w-28`}
         />
-        <input
-          type="number"
-          inputMode="decimal"
+        <MinFilter
+          label="min tvl"
+          unit="$M"
           value={minTvl}
-          onChange={(e) => {
-            setMinTvl(e.target.value);
+          onChange={(v) => {
+            setMinTvl(v);
             resetPaging();
           }}
-          placeholder="Min TVL $M"
-          className={`${inputCls} w-28`}
         />
         <button
           type="button"
@@ -617,7 +642,7 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
               : "border-border text-muted hover:text-foreground"
           }`}
         >
-          curated only
+          curated by Arbitrum
         </button>
       </div>
 
