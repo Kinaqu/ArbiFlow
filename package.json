@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "snapshot": "tsx scripts/generate-snapshot.ts"
   },
   "dependencies": {
     "@reown/appkit": "^1.8.20",
@@ -32,6 +33,7 @@
     "eslint-config-next": "16.2.6",
     "puppeteer": "^25.0.4",
     "tailwindcss": "^4",
+    "tsx": "^4.20.7",
     "typescript": "^5"
   }
 }
