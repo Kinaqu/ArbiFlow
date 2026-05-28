@@ -61,7 +61,8 @@ async function fetchPrices(
         return [t.symbol, data.coins[key]?.price ?? null];
       }),
     );
-  } catch {
+  } catch (err) {
+    console.error("[scan] price fetch failed:", err);
     return Object.fromEntries(tokens.map((t) => [t.symbol, null]));
   }
 }
