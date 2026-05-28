@@ -31,14 +31,10 @@ export function useOpportunities(
 
   const data = useMemo<OpportunitiesResponse | undefined>(() => {
     if (!q.data) return undefined;
-    const { perToken, portal, explore } = buildOpportunities(
-      q.data.pools,
-      scan ?? null,
-    );
+    const { perToken, pools } = buildOpportunities(q.data.pools, scan ?? null);
     return {
       perToken,
-      portal,
-      explore,
+      pools,
       generatedAt: q.data.generatedAt,
       source: q.data.source,
     };

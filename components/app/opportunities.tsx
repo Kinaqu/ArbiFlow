@@ -3,24 +3,23 @@
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowDown,
   ArrowRightLeft,
+  ArrowUp,
   Check,
   ChevronDown,
   Loader2,
+  Search,
   Shield,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { SCORE_MAX } from "@/lib/score";
-import type {
-  MatchedPool,
-  OpportunitySet,
-  PortalCategoryGroup,
-} from "@/lib/opportunities";
-import type { ScoredPool } from "@/lib/score";
+import type { MatchedPool, OpportunitySet } from "@/lib/opportunities";
+import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult } from "@/lib/scan";
-import { PORTAL_CATEGORY_LABELS } from "@/lib/portal";
+import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
 
 const fmtApy = (apy: number) => `${apy.toFixed(2)}%`;
 const fmtTvl = (n: number) => {
@@ -115,7 +114,7 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
             <header className="flex items-end justify-between flex-wrap gap-3">
               <div>
                 <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-2">
-                  ranked opportunities
+                  arbitrum yield
                 </div>
                 <h2 className="text-xl lg:text-2xl tracking-tight font-medium">
                   Where your{" "}
@@ -125,15 +124,13 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
               <SourceBadge source={data.source} generatedAt={data.generatedAt} />
             </header>
 
-            {data.portal.length > 0 && <PortalTier groups={data.portal} />}
+            <ExploreTable pools={data.pools} />
 
             {data.perToken.length > 0 ? (
               <PerTokenGrid sets={data.perToken} />
             ) : (
               <EmptyPerToken />
             )}
-
-            <ExploreSection pools={data.explore} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -294,51 +291,6 @@ function SourceBadge({
   );
 }
 
-function PortalTier({ groups }: { groups: PortalCategoryGroup[] }) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest">
-        <span className="w-1.5 h-1.5 rounded-full bg-gold" />
-        <span className="text-gold">Arbitrum Foundation curated</span>
-        <span className="text-muted">· via portal.arbitrum.io/earn</span>
-      </div>
-      <div className="grid md:grid-cols-3 gap-3">
-        {groups.map((g) => (
-          <div
-            key={g.category}
-            className="rounded-xl border border-border bg-surface overflow-hidden"
-          >
-            <div className="px-4 py-3 border-b border-border bg-surface-2 text-[10px] font-mono uppercase tracking-widest text-muted">
-              {PORTAL_CATEGORY_LABELS[g.category]}
-            </div>
-            <ul className="divide-y hairline">
-              {g.pools.map((pool) => (
-                <li
-                  key={pool.id}
-                  className="px-4 py-3 flex items-center gap-3"
-                >
-                  <ProtocolIcon iconPath={pool.iconPath} tier={pool.tier} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium truncate">
-                      {pool.projectLabel}
-                    </div>
-                    <div className="text-[11px] text-muted font-mono truncate">
-                      {pool.symbol}
-                    </div>
-                  </div>
-                  <div className="font-mono tabular text-sm font-semibold">
-                    {fmtApy(pool.apy)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function PerTokenGrid({ sets }: { sets: OpportunitySet[] }) {
   return (
     <div className="space-y-4">
@@ -425,38 +377,38 @@ function PoolRow({ pool }: { pool: MatchedPool }) {
   );
 }
 
-function PoolBreakdown({ pool }: { pool: MatchedPool }) {
-  const keys = useMemo(
-    () => Object.keys(SCORE_MAX) as Array<keyof typeof SCORE_MAX>,
-    [],
+function BreakdownBars({ breakdown }: { breakdown: ScoreBreakdown }) {
+  const keys = Object.keys(SCORE_MAX) as Array<keyof typeof SCORE_MAX>;
+  return (
+    <div className="space-y-1.5">
+      {keys.map((k) => {
+        const value = breakdown[k];
+        const max = SCORE_MAX[k];
+        const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+        return (
+          <div key={k} className="space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-muted">
+              <span>{BREAKDOWN_LABELS[k]}</span>
+              <span className="text-foreground">
+                {value.toFixed(1)}
+                <span className="text-muted">/{max}</span>
+              </span>
+            </div>
+            <div className="h-1 rounded-full bg-border overflow-hidden">
+              <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
+}
+
+function PoolBreakdown({ pool }: { pool: MatchedPool }) {
   return (
     <div className="px-5 pb-4 pt-1 bg-surface-2/40 border-t border-border space-y-3">
       <p className="text-sm text-muted-strong">{pool.rationale}</p>
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-        {keys.map((k) => {
-          const value = pool.breakdown[k];
-          const max = SCORE_MAX[k];
-          const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-          return (
-            <div key={k} className="space-y-1">
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-muted">
-                <span>{BREAKDOWN_LABELS[k]}</span>
-                <span className="text-foreground">
-                  {value.toFixed(1)}
-                  <span className="text-muted">/{max}</span>
-                </span>
-              </div>
-              <div className="h-1 rounded-full bg-border overflow-hidden">
-                <div
-                  className="h-full bg-accent"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <BreakdownBars breakdown={pool.breakdown} />
     </div>
   );
 }
@@ -470,57 +422,290 @@ function EmptyPerToken() {
       </div>
       <p className="text-sm text-muted-strong max-w-md mx-auto">
         Your stablecoin balances are below the idle threshold. Explore the
-        broader Arbitrum yield landscape below.
+        broader Arbitrum yield landscape in the table above.
       </p>
     </div>
   );
 }
 
-function ExploreSection({ pools }: { pools: ScoredPool[] }) {
-  if (pools.length === 0) return null;
+type SortKey = "score" | "apy" | "tvl";
+
+const SORT_ACCESSOR: Record<SortKey, (p: ScoredPool) => number> = {
+  score: (p) => p.score,
+  apy: (p) => p.apy,
+  tvl: (p) => p.tvlUsd,
+};
+
+const PAGE_SIZE = 25;
+
+function CuratedBadge({ category }: { category: PortalCategory | null }) {
+  return (
+    <span
+      className="text-[9px] font-mono uppercase tracking-wider text-gold border border-gold/40 bg-gold/10 rounded px-1 py-0.5 inline-flex items-center gap-1 flex-shrink-0"
+      title="Arbitrum Foundation curated · via portal.arbitrum.io/earn"
+    >
+      <span className="w-1 h-1 rounded-full bg-gold" />
+      {category ? PORTAL_CATEGORY_LABELS[category] : "curated"}
+    </span>
+  );
+}
+
+function ScoreCell({ pool }: { pool: ScoredPool }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      className="relative inline-flex justify-end"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="font-mono tabular text-sm text-muted-strong underline decoration-dotted decoration-border underline-offset-4 hover:text-foreground focus:outline-none focus-visible:text-foreground"
+        aria-label={`Score ${pool.score.toFixed(1)} of 100 — show breakdown`}
+      >
+        {pool.score.toFixed(1)}
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-full mt-2 z-20 w-64 rounded-lg border border-border bg-surface shadow-xl p-3 space-y-2 text-left">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
+            score {pool.score.toFixed(1)} / 100
+          </div>
+          <p className="text-xs text-muted-strong leading-snug">
+            {pool.rationale}
+          </p>
+          <BreakdownBars breakdown={pool.breakdown} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  active,
+  dir,
+  onClick,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: (k: SortKey) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(sortKey)}
+      className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${
+        active ? "text-foreground" : ""
+      } ${className ?? ""}`}
+    >
+      {label}
+      {active ? (
+        dir === "asc" ? (
+          <ArrowUp className="w-3 h-3" />
+        ) : (
+          <ArrowDown className="w-3 h-3" />
+        )
+      ) : null}
+    </button>
+  );
+}
+
+function ExploreTable({ pools }: { pools: ScoredPool[] }) {
+  const [sortKey, setSortKey] = useState<SortKey>("score");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [search, setSearch] = useState("");
+  const [curatedOnly, setCuratedOnly] = useState(false);
+  const [minApy, setMinApy] = useState("");
+  const [minTvl, setMinTvl] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Reset paging whenever a filter changes (not on re-sort).
+  const resetPaging = () => setVisibleCount(PAGE_SIZE);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toUpperCase();
+    const minApyN = Number(minApy) || 0;
+    const minTvlN = (Number(minTvl) || 0) * 1_000_000;
+    const accessor = SORT_ACCESSOR[sortKey];
+    const dir = sortDir === "asc" ? 1 : -1;
+    return pools
+      .filter((p) => {
+        if (curatedOnly && !p.portalFeatured) return false;
+        if (p.apy < minApyN) return false;
+        if (p.tvlUsd < minTvlN) return false;
+        if (q && !`${p.projectLabel} ${p.symbol}`.toUpperCase().includes(q))
+          return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const diff = accessor(a) - accessor(b);
+        if (diff !== 0) return diff * dir;
+        return a.id.localeCompare(b.id);
+      });
+  }, [pools, search, curatedOnly, minApy, minTvl, sortKey, sortDir]);
+
+  const visible = filtered.slice(0, visibleCount);
+
+  const toggleSort = (k: SortKey) => {
+    if (k === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(k);
+      setSortDir("desc");
+    }
+  };
+
+  const inputCls =
+    "px-2 py-1.5 rounded-lg border border-border bg-surface text-sm placeholder:text-muted focus:outline-none focus:border-accent";
+
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-          explore arbitrum · top {pools.length}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-muted mr-auto">
+          explore arbitrum
         </div>
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              resetPaging();
+            }}
+            placeholder="Search protocol or token"
+            className={`${inputCls} pl-8 w-52`}
+          />
+        </div>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={minApy}
+          onChange={(e) => {
+            setMinApy(e.target.value);
+            resetPaging();
+          }}
+          placeholder="Min APY %"
+          className={`${inputCls} w-28`}
+        />
+        <input
+          type="number"
+          inputMode="decimal"
+          value={minTvl}
+          onChange={(e) => {
+            setMinTvl(e.target.value);
+            resetPaging();
+          }}
+          placeholder="Min TVL $M"
+          className={`${inputCls} w-28`}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setCuratedOnly((v) => !v);
+            resetPaging();
+          }}
+          aria-pressed={curatedOnly}
+          className={`text-[11px] font-mono uppercase tracking-wider rounded-lg px-3 py-1.5 border transition-colors ${
+            curatedOnly
+              ? "border-gold/50 bg-gold/10 text-gold"
+              : "border-border text-muted hover:text-foreground"
+          }`}
+        >
+          curated only
+        </button>
       </div>
-      <div className="rounded-xl border border-border bg-surface overflow-hidden">
-        <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-border bg-surface-2 text-[10px] font-mono uppercase tracking-widest text-muted">
+
+      <div className="rounded-xl border border-border bg-surface">
+        <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-border bg-surface-2 rounded-t-xl text-[10px] font-mono uppercase tracking-widest text-muted">
           <div className="col-span-5">pool</div>
-          <div className="col-span-3 text-right">TVL</div>
-          <div className="col-span-2 text-right">APY</div>
-          <div className="col-span-2 text-right">score</div>
+          <div className="col-span-3 flex justify-end">
+            <SortHeader
+              label="TVL"
+              sortKey="tvl"
+              active={sortKey === "tvl"}
+              dir={sortDir}
+              onClick={toggleSort}
+            />
+          </div>
+          <div className="col-span-2 flex justify-end">
+            <SortHeader
+              label="APY"
+              sortKey="apy"
+              active={sortKey === "apy"}
+              dir={sortDir}
+              onClick={toggleSort}
+            />
+          </div>
+          <div className="col-span-2 flex justify-end">
+            <SortHeader
+              label="score"
+              sortKey="score"
+              active={sortKey === "score"}
+              dir={sortDir}
+              onClick={toggleSort}
+            />
+          </div>
         </div>
-        <ul className="divide-y hairline">
-          {pools.map((pool) => (
-            <li
-              key={pool.id}
-              className="grid grid-cols-12 gap-4 px-5 py-3 items-center hover:bg-surface-2/60 transition-colors"
-            >
-              <div className="col-span-7 md:col-span-5 min-w-0 flex items-center gap-2.5">
-                <ProtocolIcon iconPath={pool.iconPath} tier={pool.tier} />
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {pool.projectLabel}
-                  </div>
-                  <div className="text-[11px] text-muted font-mono truncate">
-                    {pool.symbol}
+
+        {visible.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-strong">
+            No pools match these filters.
+          </div>
+        ) : (
+          <ul className="divide-y hairline">
+            {visible.map((pool) => (
+              <li
+                key={pool.id}
+                className="grid grid-cols-12 gap-4 px-5 py-3 items-center hover:bg-surface-2/60 transition-colors"
+              >
+                <div className="col-span-7 md:col-span-5 min-w-0 flex items-center gap-2.5">
+                  <ProtocolIcon iconPath={pool.iconPath} tier={pool.tier} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {pool.projectLabel}
+                    </div>
+                    <div className="text-[11px] text-muted font-mono truncate flex items-center gap-1.5">
+                      <span className="truncate">{pool.symbol}</span>
+                      {pool.portalFeatured ? (
+                        <CuratedBadge category={pool.portalCategory} />
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="hidden md:block col-span-3 text-right font-mono tabular text-sm text-muted-strong">
-                {fmtTvl(pool.tvlUsd)}
-              </div>
-              <div className="col-span-3 md:col-span-2 text-right font-mono tabular text-sm font-medium">
-                {fmtApy(pool.apy)}
-              </div>
-              <div className="col-span-2 text-right font-mono tabular text-sm text-muted">
-                {pool.score.toFixed(1)}
-              </div>
-            </li>
-          ))}
-        </ul>
+                <div className="hidden md:block col-span-3 text-right font-mono tabular text-sm text-muted-strong">
+                  {fmtTvl(pool.tvlUsd)}
+                </div>
+                <div className="col-span-3 md:col-span-2 text-right font-mono tabular text-sm font-medium">
+                  {fmtApy(pool.apy)}
+                </div>
+                <div className="col-span-2 text-right">
+                  <ScoreCell pool={pool} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
+          showing {visible.length} of {filtered.length}
+        </div>
+        {visibleCount < filtered.length ? (
+          <button
+            type="button"
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            className="text-[11px] font-mono uppercase tracking-wider rounded-lg px-3 py-1.5 border border-border text-muted-strong hover:text-foreground hover:border-accent transition-colors"
+          >
+            Show more
+          </button>
+        ) : null}
       </div>
     </div>
   );
