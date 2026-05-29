@@ -1,14 +1,47 @@
-import { createPublicClient, http, erc20Abi, formatUnits, isAddress } from "viem";
-import { arbitrum } from "viem/chains";
-import { ARBITRUM_TOKENS, NATIVE_ETH, type Token } from "./tokens";
+import {
+  createPublicClient,
+  http,
+  erc20Abi,
+  formatUnits,
+  isAddress,
+} from "viem";
+import { arbitrum, base, optimism } from "viem/chains";
+import {
+  CHAINS,
+  NATIVE_ETH,
+  TOKENS_BY_CHAIN,
+  type ChainKey,
+  type Token,
+} from "./tokens";
 
-const RPC_URL = process.env.ARBITRUM_RPC_URL ?? "https://arb1.arbitrum.io/rpc";
 const IDLE_THRESHOLD_USD = 5;
 
-const client = createPublicClient({
-  chain: arbitrum,
-  transport: http(RPC_URL, { batch: true }),
-});
+const RPC_URLS: Record<ChainKey, string> = {
+  arbitrum: process.env.ARBITRUM_RPC_URL ?? "https://arb1.arbitrum.io/rpc",
+  base: process.env.BASE_RPC_URL ?? "https://mainnet.base.org",
+  optimism: process.env.OPTIMISM_RPC_URL ?? "https://mainnet.optimism.io",
+};
+
+const VIEM_CHAINS = { arbitrum, base, optimism } as const;
+
+// Per-chain clients. Note: Base/Optimism are OP-stack chains whose viem types
+// differ from Arbitrum's (extra "deposit" tx variant), so we let TS infer each
+// property's concrete type rather than collapsing them to a single PublicClient
+// annotation (which fails to unify).
+const clients = {
+  arbitrum: createPublicClient({
+    chain: arbitrum,
+    transport: http(RPC_URLS.arbitrum, { batch: true }),
+  }),
+  base: createPublicClient({
+    chain: base,
+    transport: http(RPC_URLS.base, { batch: true }),
+  }),
+  optimism: createPublicClient({
+    chain: optimism,
+    transport: http(RPC_URLS.optimism, { batch: true }),
+  }),
+} as const;
 
 export type ScannedToken = {
   symbol: string;
@@ -16,6 +49,8 @@ export type ScannedToken = {
   address: Token["address"];
   decimals: number;
   color: string;
+  chain: ChainKey;
+  chainId: number;
   balance: string;
   balanceFormatted: number;
   usdPrice: number | null;
@@ -35,17 +70,19 @@ type LlamaPrices = {
   coins: Record<string, { price: number; symbol: string; decimals?: number }>;
 };
 
+// DeFiLlama price key for a token on a given chain. Native ETH is the same asset
+// on every L2, so it always resolves to the coingecko ethereum feed.
+function priceKey(token: Token, chain: ChainKey): string {
+  return token.address === "native"
+    ? "coingecko:ethereum"
+    : `${chain}:${token.address.toLowerCase()}`;
+}
+
 async function fetchPrices(
   tokens: Token[],
+  chain: ChainKey,
 ): Promise<Record<string, number | null>> {
-  const keys = tokens
-    .map((t) =>
-      t.address === "native"
-        ? "coingecko:ethereum"
-        : `arbitrum:${t.address.toLowerCase()}`,
-    )
-    .join(",");
-
+  const keys = tokens.map((t) => priceKey(t, chain)).join(",");
   const url = `https://coins.llama.fi/prices/current/${keys}?searchWidth=4h`;
 
   try {
@@ -53,27 +90,22 @@ async function fetchPrices(
     if (!res.ok) throw new Error(`Llama ${res.status}`);
     const data = (await res.json()) as LlamaPrices;
     return Object.fromEntries(
-      tokens.map((t) => {
-        const key =
-          t.address === "native"
-            ? "coingecko:ethereum"
-            : `arbitrum:${t.address.toLowerCase()}`;
-        return [t.symbol, data.coins[key]?.price ?? null];
-      }),
+      tokens.map((t) => [t.symbol, data.coins[priceKey(t, chain)]?.price ?? null]),
     );
   } catch (err) {
-    console.error("[scan] price fetch failed:", err);
+    console.error(`[scan] price fetch failed (${chain}):`, err);
     return Object.fromEntries(tokens.map((t) => [t.symbol, null]));
   }
 }
 
-export async function scanWallet(rawAddress: string): Promise<ScanResult> {
-  if (!isAddress(rawAddress)) {
-    throw new Error("invalid_address");
-  }
-  const address = rawAddress as `0x${string}`;
-
-  const erc20 = ARBITRUM_TOKENS.filter((t) => t.address !== "native");
+async function scanChain(
+  address: `0x${string}`,
+  chain: ChainKey,
+): Promise<ScannedToken[]> {
+  const client = clients[chain];
+  const meta = CHAINS[chain];
+  const tokenList = TOKENS_BY_CHAIN[chain];
+  const erc20 = tokenList.filter((t) => t.address !== "native");
 
   const [nativeBalance, erc20Balances, prices] = await Promise.all([
     client.getBalance({ address }),
@@ -86,7 +118,7 @@ export async function scanWallet(rawAddress: string): Promise<ScanResult> {
         args: [address] as const,
       })),
     }),
-    fetchPrices(ARBITRUM_TOKENS),
+    fetchPrices(tokenList, chain),
   ]);
 
   const nativeFormatted = Number(formatUnits(nativeBalance, NATIVE_ETH.decimals));
@@ -98,6 +130,8 @@ export async function scanWallet(rawAddress: string): Promise<ScanResult> {
     address: NATIVE_ETH.address,
     decimals: NATIVE_ETH.decimals,
     color: NATIVE_ETH.color,
+    chain,
+    chainId: meta.id,
     balance: nativeBalance.toString(),
     balanceFormatted: nativeFormatted,
     usdPrice: nativePrice,
@@ -120,6 +154,8 @@ export async function scanWallet(rawAddress: string): Promise<ScanResult> {
       address: t.address,
       decimals: t.decimals,
       color: t.color,
+      chain,
+      chainId: meta.id,
       balance: raw.toString(),
       balanceFormatted,
       usdPrice,
@@ -128,7 +164,22 @@ export async function scanWallet(rawAddress: string): Promise<ScanResult> {
     };
   });
 
-  const tokens = [native, ...erc20Scanned]
+  return [native, ...erc20Scanned];
+}
+
+export async function scanWallet(rawAddress: string): Promise<ScanResult> {
+  if (!isAddress(rawAddress)) {
+    throw new Error("invalid_address");
+  }
+  const address = rawAddress as `0x${string}`;
+
+  const chainKeys = Object.keys(VIEM_CHAINS) as ChainKey[];
+  const perChain = await Promise.all(
+    chainKeys.map((chain) => scanChain(address, chain)),
+  );
+
+  const tokens = perChain
+    .flat()
     .filter((t) => t.balanceFormatted > 0)
     .sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0));
 

@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { WagmiProvider, type State } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
-import { arbitrum } from "@reown/appkit/networks";
+import { arbitrum, base, optimism } from "@reown/appkit/networks";
 import { projectId, wagmiAdapter, wagmiConfig } from "@/lib/wagmi";
 import { installIdentityShim } from "@/lib/identity-shim";
 
@@ -18,7 +18,7 @@ const metadata = {
 
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [arbitrum],
+  networks: [arbitrum, base, optimism],
   defaultNetwork: arbitrum,
   projectId,
   metadata,

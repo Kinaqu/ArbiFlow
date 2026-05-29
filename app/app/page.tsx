@@ -9,6 +9,11 @@ import { ConnectButton } from "@/components/wallet/connect-button";
 import { IdleBanner } from "@/components/app/idle-banner";
 import { BalanceTable } from "@/components/app/balance-table";
 import { Opportunities } from "@/components/app/opportunities";
+import {
+  OwnershipProvider,
+  OwnershipBanner,
+  OwnershipBadge,
+} from "@/components/app/ownership";
 
 export default function AppPage() {
   const searchParams = useSearchParams();
@@ -48,12 +53,14 @@ export default function AppPage() {
   }
 
   return (
+    <OwnershipProvider>
     <main className="flex-1">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-10 lg:py-14 space-y-10">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-2">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-2 flex items-center gap-2">
               {isDemo ? "demo wallet · read-only" : "your wallet"}
+              <OwnershipBadge />
             </div>
             <div className="font-mono tabular text-lg">{activeAddress}</div>
           </div>
@@ -101,6 +108,7 @@ export default function AppPage() {
 
         {data && (
           <>
+            <OwnershipBanner />
             <IdleBanner
               idleUsd={data.idleUsd}
               totalUsd={data.totalUsd}
@@ -131,5 +139,6 @@ export default function AppPage() {
         )}
       </div>
     </main>
+    </OwnershipProvider>
   );
 }

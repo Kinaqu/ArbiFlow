@@ -19,14 +19,22 @@ import {
 import { useAccount } from "wagmi";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { SCORE_MAX } from "@/lib/score";
-import type { MatchedPool, OpportunitySet } from "@/lib/opportunities";
+import type {
+  MatchedPool,
+  OpportunitySet,
+  SourceChain,
+} from "@/lib/opportunities";
 import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
+import { CHAINS, type ChainKey } from "@/lib/tokens";
 import { isAaveExecutable, poolUrl } from "@/lib/aave";
 import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
 import { yearlyYield } from "@/lib/earnings";
 import { DepositModal } from "@/components/app/deposit-modal";
+import { BridgeModal } from "@/components/app/bridge-modal";
+import { ChainBadge } from "@/components/app/chain-badge";
+import { useOwnership } from "@/components/app/ownership";
 import { PoolChart } from "@/components/app/pool-chart";
 import iconManifest from "@/lib/icon-manifest.json";
 
@@ -43,6 +51,9 @@ const BREAKDOWN_LABELS: Record<keyof typeof SCORE_MAX, string> = {
 type GenPhase = "fetching" | "scoring" | "ranking" | "ready";
 
 type ExecuteMode = "real" | "preview";
+
+// Aggregated wallet holding for a symbol, summed across every chain holding it.
+type HeldAgg = { usdValue: number; idle: boolean; chains: ChainKey[] };
 
 const PHASE_LABELS: Record<Exclude<GenPhase, "ready">, string> = {
   fetching: "Fetching live pools",
@@ -72,11 +83,19 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
       ? "real"
       : "preview";
 
-  // Symbol → held token, for the Explore table's "in wallet" awareness.
+  // Symbol → aggregated holding across chains, for the Explore table's "in
+  // wallet" awareness. A symbol can be held on Arbitrum, Base and Optimism at
+  // once, so value/idle/chains are summed across every chain that holds it.
   const held = useMemo(() => {
-    const m = new Map<string, ScannedToken>();
+    const m = new Map<string, HeldAgg>();
     for (const t of scan.tokens) {
-      if (t.balanceFormatted > 0) m.set(t.symbol.toUpperCase(), t);
+      if (t.balanceFormatted <= 0) continue;
+      const key = t.symbol.toUpperCase();
+      const cur = m.get(key) ?? { usdValue: 0, idle: false, chains: [] };
+      cur.usdValue += t.usdValue ?? 0;
+      cur.idle = cur.idle || t.idle;
+      if (!cur.chains.includes(t.chain)) cur.chains.push(t.chain);
+      m.set(key, cur);
     }
     return m;
   }, [scan]);
@@ -148,11 +167,7 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
             </header>
 
             {data.perToken.length > 0 && (
-              <PerTokenGrid
-                sets={data.perToken}
-                scan={scan}
-                executeMode={executeMode}
-              />
+              <PerTokenGrid sets={data.perToken} executeMode={executeMode} />
             )}
 
             <ExploreTable pools={data.pools} held={held} />
@@ -322,11 +337,9 @@ function SourceBadge({
 
 function PerTokenGrid({
   sets,
-  scan,
   executeMode,
 }: {
   sets: OpportunitySet[];
-  scan: ScanResult;
   executeMode: ExecuteMode;
 }) {
   return (
@@ -336,12 +349,7 @@ function PerTokenGrid({
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
         {sets.map((set) => (
-          <TokenCard
-            key={set.symbol}
-            set={set}
-            token={scan.tokens.find((t) => t.symbol === set.symbol)}
-            executeMode={executeMode}
-          />
+          <TokenCard key={set.symbol} set={set} executeMode={executeMode} />
         ))}
       </div>
     </div>
@@ -350,11 +358,9 @@ function PerTokenGrid({
 
 function TokenCard({
   set,
-  token,
   executeMode,
 }: {
   set: OpportunitySet;
-  token: ScannedToken | undefined;
   executeMode: ExecuteMode;
 }) {
   return (
@@ -366,6 +372,17 @@ function TokenCard({
           </div>
           <div className="font-mono tabular text-2xl font-semibold gradient-text-gold leading-none">
             {fmtUsd(set.balanceUsd)}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {set.sourceChains.map((s) => (
+              <span
+                key={s.chain}
+                className="inline-flex items-center gap-1 text-[10px] font-mono text-muted"
+              >
+                <ChainBadge chain={s.chain} />
+                {fmtUsd(s.usd)}
+              </span>
+            ))}
           </div>
           {set.topPools[0] ? (
             <div className="mt-1.5 text-[11px] font-mono text-mint">
@@ -385,7 +402,7 @@ function TokenCard({
           <PoolRow
             key={pool.id}
             pool={pool}
-            token={token}
+            set={set}
             executeMode={executeMode}
           />
         ))}
@@ -396,11 +413,11 @@ function TokenCard({
 
 function PoolRow({
   pool,
-  token,
+  set,
   executeMode,
 }: {
   pool: MatchedPool;
-  token: ScannedToken | undefined;
+  set: OpportunitySet;
   executeMode: ExecuteMode;
 }) {
   const [open, setOpen] = useState(false);
@@ -444,7 +461,7 @@ function PoolRow({
         </div>
       </button>
       {open ? (
-        <PoolBreakdown pool={pool} token={token} executeMode={executeMode} />
+        <PoolBreakdown pool={pool} set={set} executeMode={executeMode} />
       ) : null}
     </li>
   );
@@ -477,36 +494,78 @@ function BreakdownBars({ breakdown }: { breakdown: ScoreBreakdown }) {
   );
 }
 
+type BreakdownAction =
+  | { kind: "deposit"; token: ScannedToken }
+  | { kind: "bridge"; source: SourceChain }
+  | null;
+
 function PoolBreakdown({
   pool,
-  token,
+  set,
   executeMode,
 }: {
   pool: MatchedPool;
-  token: ScannedToken | undefined;
+  set: OpportunitySet;
   executeMode: ExecuteMode;
 }) {
-  const [depositOpen, setDepositOpen] = useState(false);
-  const executable =
-    !!token &&
-    token.address !== "native" &&
-    isAaveExecutable(pool.project, token.symbol);
+  const [action, setAction] = useState<BreakdownAction>(null);
+  const { verified } = useOwnership();
+  const preview = executeMode === "preview";
+  // Real execute (deposit/bridge) is gated behind a signed ownership challenge.
+  // Preview/sample mode never signs, so it is never gated.
+  const gated = !preview && !verified;
+
+  // Only Aave V3 pools can be executed in-app. Arbitrum sources deposit
+  // directly; Base / Optimism sources bridge to Arbitrum first, then deposit.
+  const aaveExecutable = pool.project === "aave-v3";
+  const arbitrumSource = set.sourceChains.find((s) => s.chain === "arbitrum");
+  const l2Sources = set.sourceChains.filter((s) => s.chain !== "arbitrum");
+  const canDepositArb =
+    aaveExecutable &&
+    !!arbitrumSource &&
+    arbitrumSource.token.address !== "native" &&
+    isAaveExecutable(pool.project, arbitrumSource.token.symbol);
+
+  const hasInAppAction = canDepositArb || (aaveExecutable && l2Sources.length > 0);
 
   return (
     <div className="px-5 pb-4 pt-1 bg-surface-2/40 border-t border-border space-y-3">
       <p className="text-sm text-muted-strong">{pool.rationale}</p>
       <BreakdownBars breakdown={pool.breakdown} />
       <PoolChart poolId={pool.id} />
-      <div className="pt-1">
-        {executable && token ? (
-          <button
-            type="button"
-            onClick={() => setDepositOpen(true)}
-            className="btn-primary inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white"
-          >
-            {executeMode === "preview" ? "Preview deposit" : `Deposit ${token.symbol}`}
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+      <div className="pt-1 flex flex-wrap gap-2">
+        {hasInAppAction ? (
+          <>
+            {canDepositArb && arbitrumSource ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setAction({ kind: "deposit", token: arbitrumSource.token })
+                }
+                disabled={gated}
+                title={gated ? "Verify wallet ownership first" : undefined}
+                className="btn-primary inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {preview ? "Preview deposit" : `Deposit ${set.symbol}`}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            ) : null}
+            {aaveExecutable
+              ? l2Sources.map((s) => (
+                  <button
+                    key={s.chain}
+                    type="button"
+                    onClick={() => setAction({ kind: "bridge", source: s })}
+                    disabled={gated}
+                    title={gated ? "Verify wallet ownership first" : undefined}
+                    className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                    Bring {fmtUsd(s.usd)} from {CHAINS[s.chain].label}
+                  </button>
+                ))
+              : null}
+          </>
         ) : (
           <a
             href={poolUrl(pool)}
@@ -519,12 +578,25 @@ function PoolBreakdown({
           </a>
         )}
       </div>
-      {depositOpen && token ? (
+      {gated && hasInAppAction ? (
+        <p className="text-[11px] text-gold">
+          Verify wallet ownership (banner above) to enable.
+        </p>
+      ) : null}
+      {action?.kind === "deposit" ? (
         <DepositModal
           pool={pool}
-          token={token}
-          preview={executeMode === "preview"}
-          onClose={() => setDepositOpen(false)}
+          token={action.token}
+          preview={preview}
+          onClose={() => setAction(null)}
+        />
+      ) : null}
+      {action?.kind === "bridge" ? (
+        <BridgeModal
+          pool={pool}
+          source={action.source.token}
+          preview={preview}
+          onClose={() => setAction(null)}
         />
       ) : null}
     </div>
@@ -667,7 +739,7 @@ type HoldingStatus = "full" | "partial" | "none";
 
 function holdingFor(
   symbols: string[],
-  held: Map<string, ScannedToken>,
+  held: Map<string, HeldAgg>,
 ): { status: HoldingStatus; usd: number; idle: boolean } {
   const owned = symbols.filter((s) => held.has(s));
   if (owned.length === 0) return { status: "none", usd: 0, idle: false };
@@ -685,7 +757,7 @@ function HoldingBadge({
   held,
 }: {
   symbols: string[];
-  held: Map<string, ScannedToken>;
+  held: Map<string, HeldAgg>;
 }) {
   const { status, usd, idle } = holdingFor(symbols, held);
   if (status === "none") {
@@ -712,7 +784,7 @@ function ExploreTable({
   held,
 }: {
   pools: ScoredPool[];
-  held: Map<string, ScannedToken>;
+  held: Map<string, HeldAgg>;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
