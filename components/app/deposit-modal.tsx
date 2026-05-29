@@ -7,11 +7,9 @@ import { parseUnits } from "viem";
 import type { ScoredPool } from "@/lib/score";
 import type { ScannedToken } from "@/lib/scan";
 import { useDeposit, type DepositStep } from "@/hooks/use-deposit";
+import { fmtUsd } from "@/lib/format";
 
 const arbiscan = (hash: string) => `https://arbiscan.io/tx/${hash}`;
-
-const fmtUsd = (n: number) =>
-  `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
 function TxRow({
   label,

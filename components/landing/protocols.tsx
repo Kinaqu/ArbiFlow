@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { PROTOCOL_COUNT } from "@/lib/constants";
 
 const groups = [
   {
@@ -31,7 +32,7 @@ export function Protocols() {
               [06] · Coverage
             </div>
             <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-              42 protocols.{" "}
+              {PROTOCOL_COUNT} protocols.{" "}
               <span className="text-muted">One ranking.</span>
             </h2>
             <p className="mt-5 text-base text-muted-strong leading-relaxed">

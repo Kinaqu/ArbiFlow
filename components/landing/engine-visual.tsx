@@ -5,11 +5,12 @@ import { Wallet, Cpu, ArrowUpRight, ArrowRight, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
+import { PROTOCOL_COUNT } from "@/lib/constants";
 
 const stages = [
   { label: "balances loaded", delay: 0.6 },
   { label: "idle capital detected", delay: 0.85 },
-  { label: "42 protocols evaluated", delay: 1.1 },
+  { label: `${PROTOCOL_COUNT} protocols evaluated`, delay: 1.1 },
   { label: "scoring complete", delay: 1.35 },
 ];
 
@@ -156,7 +157,7 @@ export function EngineVisual() {
             </span>
           </div>
           <span className="text-[10px] font-mono text-muted">
-            42 strategies analyzed
+            {PROTOCOL_COUNT} strategies analyzed
           </span>
         </div>
 

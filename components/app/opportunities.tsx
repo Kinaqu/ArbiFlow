@@ -24,17 +24,8 @@ import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
 import { isAaveExecutable, poolUrl } from "@/lib/aave";
+import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
 import { DepositModal } from "@/components/app/deposit-modal";
-
-const fmtApy = (apy: number) => `${apy.toFixed(2)}%`;
-const fmtTvl = (n: number) => {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
-const fmtUsd = (n: number) =>
-  `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
 const BREAKDOWN_LABELS: Record<keyof typeof SCORE_MAX, string> = {
   apy: "APY",
@@ -176,9 +167,8 @@ function GenerationPipeline({ phase }: { phase: GenPhase }) {
     return () => clearInterval(id);
   }, [phase]);
 
-  useEffect(() => {
-    if (phase === "ranking" || phase === "ready") setCount(target);
-  }, [phase]);
+  // Once past scoring, show the full count without a setState-in-effect.
+  const shown = phase === "scoring" ? count : target;
 
   const phases: Array<Exclude<GenPhase, "ready">> = [
     "fetching",
@@ -229,7 +219,7 @@ function GenerationPipeline({ phase }: { phase: GenPhase }) {
               </div>
               <span className="text-[10px] font-mono uppercase tracking-wider text-muted">
                 {p === "scoring"
-                  ? `${count} / ${target} pools`
+                  ? `${shown} / ${target} pools`
                   : status === "done"
                     ? "done"
                     : status === "active"

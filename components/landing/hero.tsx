@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Lock } from "lucide-react";
 import { EngineVisual } from "./engine-visual";
 import { ConnectButton } from "@/components/wallet/connect-button";
+import { PROTOCOL_COUNT } from "@/lib/constants";
 
 export function Hero() {
   return (
@@ -78,7 +79,7 @@ export function Hero() {
               className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl"
             >
               {[
-                { v: "42", l: "protocols indexed" },
+                { v: String(PROTOCOL_COUNT), l: "protocols indexed" },
                 { v: "1.8s", l: "wallet scan time" },
                 { v: "1 sig", l: "to deploy" },
                 { v: "$0", l: "scan · no token" },

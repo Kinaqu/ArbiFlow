@@ -1,4 +1,5 @@
 import type { ScannedToken } from "@/lib/scan";
+import { fmtUsdN } from "@/lib/format";
 
 const fmtBalance = (n: number) => {
   if (n === 0) return "0";
@@ -7,11 +8,6 @@ const fmtBalance = (n: number) => {
   if (n < 1000) return n.toFixed(3);
   return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 };
-
-const fmtUsd = (n: number | null) =>
-  n === null
-    ? "—"
-    : `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
 export function BalanceTable({ tokens }: { tokens: ScannedToken[] }) {
   if (tokens.length === 0) {
@@ -61,10 +57,10 @@ export function BalanceTable({ tokens }: { tokens: ScannedToken[] }) {
               {fmtBalance(t.balanceFormatted)}
             </div>
             <div className="hidden md:block col-span-2 text-right font-mono tabular text-sm text-muted">
-              {fmtUsd(t.usdPrice)}
+              {fmtUsdN(t.usdPrice)}
             </div>
             <div className="hidden md:block col-span-2 text-right font-mono tabular text-sm font-medium">
-              {fmtUsd(t.usdValue)}
+              {fmtUsdN(t.usdValue)}
             </div>
             <div className="hidden md:flex col-span-1 justify-end">
               {t.idle ? (

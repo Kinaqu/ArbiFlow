@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Plug, ScanLine, Sparkles, Rocket } from "lucide-react";
+import { PROTOCOL_COUNT } from "@/lib/constants";
 
 const steps = [
   {
@@ -17,7 +18,7 @@ const steps = [
     icon: ScanLine,
     title: "Scan in stages",
     body: "Balances, idle capital, ~40 yield venues, scoring — each stage streams in milliseconds. You see the math as it computes.",
-    detail: "42 / 42",
+    detail: `${PROTOCOL_COUNT} / ${PROTOCOL_COUNT}`,
     detailLabel: "protocols scored",
   },
   {
