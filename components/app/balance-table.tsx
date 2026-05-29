@@ -1,5 +1,6 @@
 import type { ScannedToken } from "@/lib/scan";
 import { fmtUsdN } from "@/lib/format";
+import { ChainBadge } from "@/components/app/chain-badge";
 
 const fmtBalance = (n: number) => {
   if (n === 0) return "0";
@@ -36,7 +37,7 @@ export function BalanceTable({ tokens }: { tokens: ScannedToken[] }) {
       <ul className="divide-y hairline">
         {tokens.map((t) => (
           <li
-            key={t.symbol}
+            key={`${t.chain}-${t.symbol}`}
             className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-surface-2/60 transition-colors"
           >
             <div className="col-span-7 md:col-span-4 flex items-center gap-3 min-w-0">
@@ -45,8 +46,9 @@ export function BalanceTable({ tokens }: { tokens: ScannedToken[] }) {
                 style={{ background: t.color }}
               />
               <div className="min-w-0">
-                <div className="font-medium text-foreground truncate">
-                  {t.symbol}
+                <div className="font-medium text-foreground truncate flex items-center gap-1.5">
+                  <span className="truncate">{t.symbol}</span>
+                  <ChainBadge chain={t.chain} />
                 </div>
                 <div className="text-[11px] text-muted truncate font-mono">
                   {t.name}

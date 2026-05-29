@@ -174,3 +174,136 @@ export const ARBITRUM_TOKENS: Token[] = [
 
 export const tokenBySymbol = (sym: string) =>
   ARBITRUM_TOKENS.find((t) => t.symbol === sym);
+
+// --- Multichain source set ----------------------------------------------------
+// Arbitrum stays the home chain for yield. Base + Optimism are scanned only for a
+// curated bridgeable set (stables + WETH + native ETH) — no need to sweep 20
+// tokens on the L2s, since their only role is "bring idle capital to Arbitrum".
+
+export type ChainKey = "arbitrum" | "base" | "optimism";
+
+export type ChainMeta = {
+  key: ChainKey;
+  id: number;
+  label: string;
+  color: string;
+  explorer: string;
+};
+
+export const CHAINS: Record<ChainKey, ChainMeta> = {
+  arbitrum: {
+    key: "arbitrum",
+    id: 42161,
+    label: "Arbitrum",
+    color: "#28A0F0",
+    explorer: "https://arbiscan.io",
+  },
+  base: {
+    key: "base",
+    id: 8453,
+    label: "Base",
+    color: "#0052FF",
+    explorer: "https://basescan.org",
+  },
+  optimism: {
+    key: "optimism",
+    id: 10,
+    label: "Optimism",
+    color: "#FF0420",
+    explorer: "https://optimistic.etherscan.io",
+  },
+};
+
+export const BASE_TOKENS: Token[] = [
+  NATIVE_ETH,
+  {
+    symbol: "WETH",
+    name: "Wrapped Ether",
+    address: "0x4200000000000000000000000000000000000006",
+    decimals: 18,
+    color: "#627EEA",
+    volatile: true,
+  },
+  {
+    symbol: "USDC",
+    name: "USD Coin",
+    address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    decimals: 6,
+    color: "#2775CA",
+    volatile: false,
+  },
+  {
+    symbol: "USDbC",
+    name: "USD Base Coin (Bridged)",
+    address: "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
+    decimals: 6,
+    color: "#2775CA",
+    volatile: false,
+  },
+  {
+    symbol: "USDT",
+    name: "Tether USD",
+    address: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+    decimals: 6,
+    color: "#26A17B",
+    volatile: false,
+  },
+  {
+    symbol: "DAI",
+    name: "Dai Stablecoin",
+    address: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+    decimals: 18,
+    color: "#F5AC37",
+    volatile: false,
+  },
+];
+
+export const OPTIMISM_TOKENS: Token[] = [
+  NATIVE_ETH,
+  {
+    symbol: "WETH",
+    name: "Wrapped Ether",
+    address: "0x4200000000000000000000000000000000000006",
+    decimals: 18,
+    color: "#627EEA",
+    volatile: true,
+  },
+  {
+    symbol: "USDC",
+    name: "USD Coin",
+    address: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+    decimals: 6,
+    color: "#2775CA",
+    volatile: false,
+  },
+  {
+    symbol: "USDC.e",
+    name: "USD Coin (Bridged)",
+    address: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+    decimals: 6,
+    color: "#2775CA",
+    volatile: false,
+  },
+  {
+    symbol: "USDT",
+    name: "Tether USD",
+    address: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+    decimals: 6,
+    color: "#26A17B",
+    volatile: false,
+  },
+  {
+    symbol: "DAI",
+    name: "Dai Stablecoin",
+    address: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    decimals: 18,
+    color: "#F5AC37",
+    volatile: false,
+  },
+];
+
+export const TOKENS_BY_CHAIN: Record<ChainKey, Token[]> = {
+  arbitrum: ARBITRUM_TOKENS,
+  base: BASE_TOKENS,
+  optimism: OPTIMISM_TOKENS,
+};

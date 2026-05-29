@@ -1,5 +1,5 @@
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { arbitrum } from "@reown/appkit/networks";
+import { arbitrum, base, optimism } from "@reown/appkit/networks";
 import { cookieStorage, createStorage } from "wagmi";
 
 // Fail loudly on Vercel deploys when the env var is missing, so a silent
@@ -17,16 +17,32 @@ if (!rawProjectId && process.env.VERCEL) {
 
 export const projectId = rawProjectId ?? "dev-placeholder-no-modal";
 
-export const networks = [arbitrum] as const;
+// Arbitrum stays first/default — it's the home chain for yield. Base + Optimism
+// are added as source chains so idle capital stranded on those L2s can be
+// bridged back to Arbitrum.
+export const networks = [arbitrum, base, optimism] as const;
+
+// Map our optional per-chain RPC env vars to Reown's `eip155:<id>` keys. Only
+// the chains with an override set are included; the rest fall back to public RPCs.
+const customRpcUrls = Object.fromEntries(
+  (
+    [
+      ["eip155:42161", process.env.ARBITRUM_RPC_URL],
+      ["eip155:8453", process.env.BASE_RPC_URL],
+      ["eip155:10", process.env.OPTIMISM_RPC_URL],
+    ] as const
+  )
+    .filter(([, url]) => !!url)
+    .map(([key, url]) => [key, [{ url: url as string }]]),
+);
 
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,
   projectId,
-  networks: [arbitrum],
-  customRpcUrls: process.env.ARBITRUM_RPC_URL
-    ? { "eip155:42161": [{ url: process.env.ARBITRUM_RPC_URL }] }
-    : undefined,
+  networks: [arbitrum, base, optimism],
+  customRpcUrls:
+    Object.keys(customRpcUrls).length > 0 ? customRpcUrls : undefined,
 });
 
 export const wagmiConfig = wagmiAdapter.wagmiConfig;
