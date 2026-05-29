@@ -6,7 +6,9 @@ import { Check, ExternalLink, Loader2, X } from "lucide-react";
 import { parseUnits } from "viem";
 import type { ScoredPool } from "@/lib/score";
 import type { ScannedToken } from "@/lib/scan";
-import { useDeposit, type DepositStep } from "@/hooks/use-deposit";
+import { useExecute, type ExecMode, type ExecStep } from "@/hooks/use-execute";
+import { isAaveExecutable, poolUrl } from "@/lib/aave";
+import { fmtSlippage } from "@/lib/enso";
 import { fmtUsd } from "@/lib/format";
 import { monthlyYield, yearlyYield } from "@/lib/earnings";
 import { addPosition } from "@/lib/positions";
@@ -62,15 +64,15 @@ function TxRow({
   );
 }
 
-function approveState(step: DepositStep, hash: string | null) {
+function approveStateOf(step: ExecStep, hash: string | null) {
   if (step === "approving") return "pending" as const;
-  if (step === "supplying" || step === "done")
+  if (step === "executing" || step === "done")
     return hash ? ("done" as const) : ("skipped" as const);
   return "idle" as const;
 }
 
-function supplyState(step: DepositStep) {
-  if (step === "supplying") return "pending" as const;
+function execStateOf(step: ExecStep) {
+  if (step === "executing") return "pending" as const;
   if (step === "done") return "done" as const;
   return "idle" as const;
 }
@@ -86,13 +88,23 @@ export function DepositModal({
   preview: boolean;
   onClose: () => void;
 }) {
-  const { step, approveHash, supplyHash, error, run } = useDeposit();
+  const { step, route, approveHash, execHash, error, requestRoute, run } =
+    useExecute();
   const [amount, setAmount] = useState(String(token.balanceFormatted));
   const [simulate, setSimulate] = useState(false);
   // Sample-wallet preview can never sign — it always runs the dry-run.
   const effectiveSimulate = preview || simulate;
 
-  const busy = step === "switching" || step === "approving" || step === "supplying";
+  // Aave V3 reserves use the native supply fast path (no router fee); every
+  // other protocol routes through Enso.
+  const mode: ExecMode =
+    token.address !== "native" && isAaveExecutable(pool.project, token.symbol)
+      ? "native"
+      : "enso";
+
+  const busy =
+    step === "switching" || step === "approving" || step === "executing";
+  const routing = step === "routing";
   const balance = token.balanceFormatted;
   const amountNum = Number(amount) || 0;
   const usd = token.usdPrice != null ? amountNum * token.usdPrice : null;
@@ -104,6 +116,28 @@ export function DepositModal({
     parsed = BigInt(0);
   }
   const invalid = parsed <= BigInt(0) || amountNum > balance;
+
+  // Enso pools can't always be routed (unsupported position / dust / no key).
+  const routeFailed = mode === "enso" && route != null && !route.executable;
+
+  // Debounced route fetch for Enso pools, so the modal shows what you'll
+  // receive before you sign. Native (Aave) deposits need no quote.
+  useEffect(() => {
+    if (mode !== "enso" || busy || step === "done" || invalid) return;
+    const id = setTimeout(() => {
+      requestRoute({
+        asset: token.address as `0x${string}`,
+        amount: parsed,
+        amountFormatted: amountNum,
+        project: pool.project,
+        underlyingTokens: pool.underlyingTokens,
+        symbol: token.symbol,
+        simulate: effectiveSimulate,
+      });
+    }, 600);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amount, effectiveSimulate, invalid, mode]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -138,8 +172,19 @@ export function DepositModal({
 
   async function onDeposit() {
     if (invalid || token.address === "native") return;
-    await run({ asset: token.address, amount: parsed, simulate: effectiveSimulate });
+    await run({
+      asset: token.address,
+      amount: parsed,
+      amountFormatted: amountNum,
+      project: pool.project,
+      underlyingTokens: pool.underlyingTokens,
+      symbol: token.symbol,
+      simulate: effectiveSimulate,
+      mode,
+    });
   }
+
+  const depositDisabled = invalid || busy || routing || routeFailed;
 
   return (
     <div
@@ -161,7 +206,8 @@ export function DepositModal({
             <div className="text-lg font-medium">
               {token.symbol}{" "}
               <span className="text-muted font-mono text-sm">
-                · {pool.apy.toFixed(2)}% APY · Aave V3
+                · {pool.apy.toFixed(2)}% APY
+                {mode === "native" ? " · Aave V3" : " · via Enso"}
               </span>
             </div>
           </div>
@@ -192,8 +238,9 @@ export function DepositModal({
               ) : null}
             </div>
             <p className="text-sm text-muted-strong">
-              Supplied {amount} {token.symbol} to Aave V3 — now earning yield as
-              a{token.symbol}. Withdraw anytime from Aave.
+              Deposited {amount} {token.symbol} into {pool.projectLabel} — now
+              earning {pool.apy.toFixed(2)}% APY. Withdraw anytime from{" "}
+              {pool.projectLabel}.
             </p>
             <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
               <div>
@@ -217,13 +264,13 @@ export function DepositModal({
             <div className="border-t border-border pt-1">
               <TxRow
                 label={`Approve ${token.symbol}`}
-                state={approveState(step, approveHash)}
+                state={approveStateOf(step, approveHash)}
                 hash={approveHash}
               />
               <TxRow
-                label="Supply to Aave V3"
-                state={supplyState(step)}
-                hash={supplyHash}
+                label={`Deposit to ${pool.projectLabel}`}
+                state={execStateOf(step)}
+                hash={execHash}
               />
             </div>
             <button
@@ -284,6 +331,64 @@ export function DepositModal({
               </div>
             ) : null}
 
+            {/* Enso route summary — what you'll receive, up front. */}
+            {mode === "enso" ? (
+              <div className="rounded-lg border border-border bg-surface-2/40 p-4 space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted">
+                  <span>route · via Enso</span>
+                  {routing ? (
+                    <span className="inline-flex items-center gap-1 text-muted">
+                      <Loader2 className="w-3 h-3 animate-spin" /> pricing…
+                    </span>
+                  ) : null}
+                </div>
+                {route !== null && route.executable ? (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted">Est. received</span>
+                      <span className="font-mono tabular text-mint">
+                        {route.amountOutFormatted.toLocaleString("en-US", {
+                          maximumFractionDigits: 4,
+                        })}{" "}
+                        {route.tokenOut.symbol}
+                      </span>
+                    </div>
+                    {route.priceImpactPct != null ? (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted">Price impact</span>
+                        <span className="font-mono tabular">
+                          {route.priceImpactPct.toFixed(2)}%
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted">Max slippage</span>
+                      <span className="font-mono tabular">
+                        {fmtSlippage(route.slippageBps)}
+                      </span>
+                    </div>
+                  </>
+                ) : route !== null && !route.executable ? (
+                  <div className="text-[11px] text-muted-strong">
+                    Couldn&apos;t auto-route this pool
+                    {route.reason ? ` (${route.reason})` : ""}. Open it directly:
+                    <a
+                      href={poolUrl(pool)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:text-foreground inline-flex items-center gap-1 ml-1"
+                    >
+                      {pool.projectLabel} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                ) : !routing ? (
+                  <div className="text-[11px] text-muted">
+                    Enter an amount to fetch a live route.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             {preview ? (
               <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2.5 text-[11px] text-muted-strong">
                 <span className="text-gold font-medium">Sample wallet</span> —
@@ -318,7 +423,7 @@ export function DepositModal({
               </button>
             )}
 
-            {step !== "idle" ? (
+            {step !== "idle" && step !== "routing" ? (
               <div className="border-t border-border pt-1">
                 {step === "switching" ? (
                   <div className="flex items-center gap-2 py-2 text-sm text-muted-strong">
@@ -328,25 +433,23 @@ export function DepositModal({
                 ) : null}
                 <TxRow
                   label={`Approve ${token.symbol}`}
-                  state={approveState(step, approveHash)}
+                  state={approveStateOf(step, approveHash)}
                   hash={approveHash}
                 />
                 <TxRow
-                  label="Supply to Aave V3"
-                  state={supplyState(step)}
-                  hash={supplyHash}
+                  label={`Deposit to ${pool.projectLabel}`}
+                  state={execStateOf(step)}
+                  hash={execHash}
                 />
               </div>
             ) : null}
 
-            {error ? (
-              <p className="text-sm text-rose">{error}</p>
-            ) : null}
+            {error ? <p className="text-sm text-rose">{error}</p> : null}
 
             <button
               type="button"
               onClick={onDeposit}
-              disabled={invalid || busy}
+              disabled={depositDisabled}
               className="btn-primary w-full rounded-md py-2.5 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {busy ? (
@@ -354,12 +457,14 @@ export function DepositModal({
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {step === "approving"
                     ? "Approving…"
-                    : step === "supplying"
-                      ? "Supplying…"
+                    : step === "executing"
+                      ? "Depositing…"
                       : "Working…"}
                 </>
               ) : step === "error" ? (
                 "Try again"
+              ) : routeFailed ? (
+                "Open on protocol instead"
               ) : preview ? (
                 "Preview deposit"
               ) : simulate ? (

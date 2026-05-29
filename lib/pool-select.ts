@@ -54,6 +54,11 @@ export type NormalizedPool = {
   iconPath: string;
   portalFeatured: boolean;
   portalCategory: PortalCategory | null;
+  // Deposit-target hints for the execution router (Enso): the pool's underlying
+  // ERC-20s and DeFiLlama's free-text meta. Resolve the on-chain position token
+  // from these at execute time — the pool `id` is a DeFiLlama UUID, not a contract.
+  underlyingTokens: string[];
+  poolMeta: string | null;
 };
 
 export type RawPool = {
@@ -72,6 +77,8 @@ export type RawPool = {
     predictedClass: string | null;
     predictedProbability: number | null;
   } | null;
+  underlyingTokens?: string[] | null;
+  poolMeta?: string | null;
 };
 
 export type LlamaResponse = { status?: string; data?: RawPool[] };
@@ -121,6 +128,10 @@ export function normalize(raw: RawPool): NormalizedPool {
     iconPath: `${ICON_BASE}/${raw.project}.png`,
     portalFeatured,
     portalCategory,
+    underlyingTokens: Array.isArray(raw.underlyingTokens)
+      ? raw.underlyingTokens.filter((a): a is string => typeof a === "string")
+      : [],
+    poolMeta: raw.poolMeta ?? null,
   };
 }
 

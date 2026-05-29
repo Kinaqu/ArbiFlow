@@ -28,7 +28,7 @@ import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
 import { CHAINS, type ChainKey } from "@/lib/tokens";
-import { isAaveExecutable, poolUrl } from "@/lib/aave";
+import { poolUrl } from "@/lib/aave";
 import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
 import { yearlyYield } from "@/lib/earnings";
 import { DepositModal } from "@/components/app/deposit-modal";
@@ -515,18 +515,16 @@ function PoolBreakdown({
   // Preview/sample mode never signs, so it is never gated.
   const gated = !preview && !verified;
 
-  // Only Aave V3 pools can be executed in-app. Arbitrum sources deposit
-  // directly; Base / Optimism sources bridge to Arbitrum first, then deposit.
-  const aaveExecutable = pool.project === "aave-v3";
+  // Every pool is attemptable in-app: Arbitrum sources deposit directly (Aave
+  // native fast path or Enso routing, decided in the modal); Base / Optimism
+  // sources bridge to Arbitrum first, then deposit. Pools Enso can't route
+  // degrade to a deep-link inside the modal.
   const arbitrumSource = set.sourceChains.find((s) => s.chain === "arbitrum");
   const l2Sources = set.sourceChains.filter((s) => s.chain !== "arbitrum");
   const canDepositArb =
-    aaveExecutable &&
-    !!arbitrumSource &&
-    arbitrumSource.token.address !== "native" &&
-    isAaveExecutable(pool.project, arbitrumSource.token.symbol);
+    !!arbitrumSource && arbitrumSource.token.address !== "native";
 
-  const hasInAppAction = canDepositArb || (aaveExecutable && l2Sources.length > 0);
+  const hasInAppAction = canDepositArb || l2Sources.length > 0;
 
   return (
     <div className="px-5 pb-4 pt-1 bg-surface-2/40 border-t border-border space-y-3">
@@ -550,21 +548,19 @@ function PoolBreakdown({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : null}
-            {aaveExecutable
-              ? l2Sources.map((s) => (
-                  <button
-                    key={s.chain}
-                    type="button"
-                    onClick={() => setAction({ kind: "bridge", source: s })}
-                    disabled={gated}
-                    title={gated ? "Verify wallet ownership first" : undefined}
-                    className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                    Bring {fmtUsd(s.usd)} from {CHAINS[s.chain].label}
-                  </button>
-                ))
-              : null}
+            {l2Sources.map((s) => (
+              <button
+                key={s.chain}
+                type="button"
+                onClick={() => setAction({ kind: "bridge", source: s })}
+                disabled={gated}
+                title={gated ? "Verify wallet ownership first" : undefined}
+                className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" />
+                Bring &amp; deposit {fmtUsd(s.usd)} from {CHAINS[s.chain].label}
+              </button>
+            ))}
           </>
         ) : (
           <a

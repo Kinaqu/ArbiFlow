@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -14,11 +14,13 @@ import { formatUnits, parseUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import type { ScoredPool } from "@/lib/score";
 import type { ScannedToken } from "@/lib/scan";
-import { useBridge } from "@/hooks/use-bridge";
+import { useRoute } from "@/hooks/use-route";
 import { CHAINS } from "@/lib/tokens";
-import { RELAY_NATIVE, formatEta } from "@/lib/relay";
+import { formatEta } from "@/lib/relay";
+import { poolUrl } from "@/lib/aave";
 import { fmtUsd } from "@/lib/format";
-import { DepositModal } from "@/components/app/deposit-modal";
+import { yearlyYield } from "@/lib/earnings";
+import { RouteTimeline } from "@/components/app/route-timeline";
 
 // Below this much native ETH on the origin chain, the user likely can't pay for
 // the bridge deposit transaction itself (Relay covers destination gas, not origin).
@@ -56,19 +58,18 @@ export function BridgeModal({
   onClose: () => void;
 }) {
   const { address } = useAccount();
-  const { step, quote, error, hashes, requestQuote, execute } = useBridge();
+  const { phase, error, bridge, deposit, requestQuote, run } = useRoute();
   const [amount, setAmount] = useState(String(source.balanceFormatted));
   const [simulate, setSimulate] = useState(false);
-  const [depositOpen, setDepositOpen] = useState(false);
 
-  // Sample-wallet preview can never sign — it always runs the dry-run.
   const effectiveSimulate = preview || simulate;
   const chainMeta = CHAINS[source.chain];
 
-  const busy =
-    step === "switching" || step === "approving" || step === "bridging";
-  const done = step === "done";
-  const quoting = step === "quoting";
+  const quoting = phase === "quoting";
+  const busy = phase === "bridging" || phase === "bridged" || phase === "depositing";
+  const done = phase === "done";
+  // Funds bridged but the deposit leg failed — recover via a deep-link.
+  const bridgedButStuck = phase === "error" && bridge.step === "done";
 
   const balance = source.balanceFormatted;
   const amountNum = Number(amount) || 0;
@@ -82,7 +83,6 @@ export function BridgeModal({
   }
   const invalid = parsed <= BigInt(0) || amountNum > balance;
 
-  // Native gas on the origin chain — needed to submit the bridge tx ourselves.
   const { data: nativeBal } = useBalance({
     address,
     chainId: source.chainId,
@@ -94,20 +94,14 @@ export function BridgeModal({
   const lowOriginGas =
     !preview && originEth !== null && originEth < MIN_ORIGIN_ETH;
 
-  const originCurrency =
-    source.address === "native" ? RELAY_NATIVE : source.address;
-
-  // Debounced auto-quote whenever the amount (or sim mode) changes and we're
-  // not mid-execution. Keeps the fee breakdown live as the user types.
+  // Debounced auto-quote whenever the amount (or sim mode) changes, until the
+  // bridge leg starts. Keeps the fee breakdown live as the user types.
   useEffect(() => {
-    if (busy || done) return;
-    if (invalid) return;
+    if (busy || done || bridge.step === "done" || invalid) return;
     const id = setTimeout(() => {
       requestQuote({
-        originChainId: source.chainId,
-        originCurrency,
-        amountWei: parsed.toString(),
-        symbol: source.symbol,
+        source,
+        amount: parsed,
         amountUsd: usdValue,
         simulate: effectiveSimulate,
       });
@@ -131,36 +125,20 @@ export function BridgeModal({
     setAmount(v);
   }
 
-  async function onBridge() {
+  async function onRun() {
     if (invalid) return;
-    await execute({ originChainId: source.chainId, simulate: effectiveSimulate });
+    await run({ source, pool, simulate: effectiveSimulate });
   }
 
-  // On arrival, hand the now-on-Arbitrum funds to the existing Aave deposit
-  // flow. We synthesize the destination token from the quote's expected output.
-  const arrived: ScannedToken | null = useMemo(() => {
-    if (!quote || quote.destToken.address === "native") return null;
-    const recv = quote.fees.minReceived;
-    return {
-      symbol: quote.destToken.symbol,
-      name: quote.destToken.name,
-      address: quote.destToken.address,
-      decimals: quote.destToken.decimals,
-      color: quote.destToken.color,
-      chain: "arbitrum",
-      chainId: CHAINS.arbitrum.id,
-      balance: parseUnits(
-        recv ? recv.toFixed(quote.destToken.decimals) : "0",
-        quote.destToken.decimals,
-      ).toString(),
-      balanceFormatted: recv,
-      usdPrice: recv > 0 ? quote.fees.minReceivedUsd / recv : null,
-      usdValue: quote.fees.minReceivedUsd,
-      idle: true,
-    };
-  }, [quote]);
-
-  const fees = quote?.fees;
+  const fees = bridge.quote?.fees;
+  const destSymbol = bridge.quote?.destToken.symbol ?? "USDC";
+  const showTimeline = busy || done || bridgedButStuck;
+  const sendLabel = `${amount} ${source.symbol} · ${fmtUsd(usdValue)}`;
+  const receiveLabel = fees
+    ? `${fees.minReceived.toLocaleString("en-US", {
+        maximumFractionDigits: 4,
+      })} ${destSymbol} · ${fmtUsd(fees.minReceivedUsd)}`
+    : "";
 
   return (
     <div
@@ -177,7 +155,7 @@ export function BridgeModal({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
-              bring to arbitrum · via Relay
+              bring &amp; deposit · via Relay + {pool.projectLabel}
             </div>
             <div className="text-lg font-medium inline-flex items-center gap-2">
               {source.symbol}
@@ -185,7 +163,9 @@ export function BridgeModal({
                 {chainMeta.label}
               </span>
               <ArrowRight className="w-4 h-4 text-muted" />
-              <span className="text-muted font-mono text-sm">Arbitrum</span>
+              <span className="text-muted font-mono text-sm">
+                {pool.projectLabel}
+              </span>
             </div>
           </div>
           <button
@@ -204,7 +184,7 @@ export function BridgeModal({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-mint text-sm font-medium">
                 <Check className="w-4 h-4" />
-                {effectiveSimulate ? "Simulated bridge complete" : "Bridged to Arbitrum"}
+                {effectiveSimulate ? "Simulated route complete" : "Bridged & deposited"}
               </div>
               {effectiveSimulate ? (
                 <span className="text-[9px] font-mono uppercase tracking-wider text-gold border border-gold/40 bg-gold/10 rounded px-1.5 py-0.5">
@@ -215,21 +195,38 @@ export function BridgeModal({
             <p className="text-sm text-muted-strong">
               {fees ? (
                 <>
-                  ~{fmtUsd(fees.minReceivedUsd)} of {quote?.destToken.symbol} is
-                  now on Arbitrum, ready to earn yield.
+                  ~{fmtUsd(fees.minReceivedUsd)} of {destSymbol} bridged from{" "}
+                  {chainMeta.label} and deposited into {pool.projectLabel} —
+                  now earning {pool.apy.toFixed(2)}% APY.
                 </>
               ) : (
-                "Your funds are on Arbitrum, ready to earn yield."
+                <>Funds are on Arbitrum and earning yield in {pool.projectLabel}.</>
               )}
             </p>
+            <div className="border-t border-border pt-1 text-sm flex items-center justify-between">
+              <span className="text-muted">Projected yield</span>
+              <span className="font-mono tabular text-mint">
+                +{fmtUsd(yearlyYield(fees?.minReceivedUsd ?? usdValue, pool.apy))}/yr
+              </span>
+            </div>
+            <RouteTimeline
+              originChain={source.chain}
+              destProjectLabel={pool.projectLabel}
+              bridgeStep={bridge.step}
+              bridgeHashes={bridge.hashes}
+              depositStep={deposit.step}
+              approveHash={deposit.approveHash}
+              execHash={deposit.execHash}
+              etaSeconds={fees?.etaSeconds ?? 0}
+              sendLabel={sendLabel}
+              receiveLabel={receiveLabel}
+            />
             <button
               type="button"
-              onClick={() => setDepositOpen(true)}
-              disabled={!arrived}
-              className="btn-primary w-full rounded-md py-2.5 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40"
+              onClick={onClose}
+              className="btn-primary w-full rounded-md py-2.5 text-sm font-medium text-white"
             >
-              Deposit on Arbitrum
-              <ArrowRight className="w-3.5 h-3.5" />
+              Done
             </button>
           </div>
         ) : (
@@ -269,60 +266,69 @@ export function BridgeModal({
               </div>
             </div>
 
-            {/* Fee breakdown — every cost up front, no surprises. */}
-            <div className="rounded-lg border border-border bg-surface-2/40 p-4 space-y-2">
-              <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted">
-                <span>quote</span>
-                {quoting ? (
-                  <span className="inline-flex items-center gap-1 text-muted">
-                    <Loader2 className="w-3 h-3 animate-spin" /> pricing…
-                  </span>
-                ) : fees ? (
-                  <span className="text-mint">ETA {formatEta(fees.etaSeconds)}</span>
+            {/* Live route while executing; fee breakdown beforehand. */}
+            {showTimeline ? (
+              <RouteTimeline
+                originChain={source.chain}
+                destProjectLabel={pool.projectLabel}
+                bridgeStep={bridge.step}
+                bridgeHashes={bridge.hashes}
+                depositStep={deposit.step}
+                approveHash={deposit.approveHash}
+                execHash={deposit.execHash}
+                etaSeconds={fees?.etaSeconds ?? 0}
+                sendLabel={sendLabel}
+                receiveLabel={receiveLabel}
+              />
+            ) : (
+              <div className="rounded-lg border border-border bg-surface-2/40 p-4 space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted">
+                  <span>quote</span>
+                  {quoting ? (
+                    <span className="inline-flex items-center gap-1 text-muted">
+                      <Loader2 className="w-3 h-3 animate-spin" /> pricing…
+                    </span>
+                  ) : fees ? (
+                    <span className="text-mint">ETA {formatEta(fees.etaSeconds)}</span>
+                  ) : null}
+                </div>
+                {fees ? (
+                  <>
+                    <FeeRow label="Relayer fee" value={fmtUsd(fees.relayerFeeUsd)} />
+                    <FeeRow
+                      label="Origin gas"
+                      value={fmtUsd(fees.originGasUsd)}
+                      hint={chainMeta.label}
+                    />
+                    <FeeRow
+                      label="Destination gas"
+                      value={fmtUsd(fees.destinationGasUsd)}
+                      hint="Arbitrum"
+                    />
+                    <FeeRow
+                      label="Price impact"
+                      value={`${fees.priceImpactPct.toFixed(2)}%`}
+                    />
+                    <div className="border-t border-border pt-2 flex items-center justify-between text-sm">
+                      <span className="text-muted-strong">Min received</span>
+                      <span className="font-mono tabular text-mint">
+                        {fees.minReceived.toLocaleString("en-US", {
+                          maximumFractionDigits: 4,
+                        })}{" "}
+                        {destSymbol}
+                        <span className="text-muted"> · {fmtUsd(fees.minReceivedUsd)}</span>
+                      </span>
+                    </div>
+                  </>
+                ) : !quoting ? (
+                  <div className="text-[11px] text-muted">
+                    Enter an amount to fetch a live Relay quote.
+                  </div>
                 ) : null}
               </div>
-              {fees ? (
-                <>
-                  <FeeRow label="Relayer fee" value={fmtUsd(fees.relayerFeeUsd)} />
-                  <FeeRow
-                    label="Origin gas"
-                    value={fmtUsd(fees.originGasUsd)}
-                    hint={chainMeta.label}
-                  />
-                  <FeeRow
-                    label="Destination gas"
-                    value={fmtUsd(fees.destinationGasUsd)}
-                    hint="Arbitrum"
-                  />
-                  {fees.appFeeUsd > 0 ? (
-                    <FeeRow label="App fee" value={fmtUsd(fees.appFeeUsd)} />
-                  ) : null}
-                  <FeeRow
-                    label="Price impact"
-                    value={`${fees.priceImpactPct.toFixed(2)}%`}
-                  />
-                  <div className="border-t border-border pt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-strong">Min received</span>
-                    <span className="font-mono tabular text-mint">
-                      {fees.minReceived.toLocaleString("en-US", {
-                        maximumFractionDigits: 4,
-                      })}{" "}
-                      {quote?.destToken.symbol}
-                      <span className="text-muted">
-                        {" "}· {fmtUsd(fees.minReceivedUsd)}
-                      </span>
-                    </span>
-                  </div>
-                </>
-              ) : !quoting ? (
-                <div className="text-[11px] text-muted">
-                  Enter an amount to fetch a live Relay quote.
-                </div>
-              ) : null}
-            </div>
+            )}
 
-            {/* Pitfall warnings */}
-            {lowOriginGas ? (
+            {lowOriginGas && !showTimeline ? (
               <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2.5 text-[11px] text-muted-strong inline-flex items-start gap-2">
                 <TriangleAlert className="w-3.5 h-3.5 text-gold flex-shrink-0 mt-0.5" />
                 <span>
@@ -332,13 +338,29 @@ export function BridgeModal({
               </div>
             ) : null}
 
+            {bridgedButStuck ? (
+              <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2.5 text-[11px] text-muted-strong">
+                Funds arrived on Arbitrum, but the deposit couldn&apos;t
+                auto-route. Open{" "}
+                <a
+                  href={poolUrl(pool)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:text-foreground inline-flex items-center gap-1"
+                >
+                  {pool.projectLabel} <ExternalLink className="w-3 h-3" />
+                </a>{" "}
+                to finish.
+              </div>
+            ) : null}
+
             {preview ? (
               <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2.5 text-[11px] text-muted-strong">
                 <span className="text-gold font-medium">Sample wallet</span> —
                 preview only, signing is disabled. Connect your own wallet to
                 bridge for real.
               </div>
-            ) : (
+            ) : !showTimeline ? (
               <button
                 type="button"
                 onClick={() => setSimulate((v) => !v)}
@@ -349,7 +371,7 @@ export function BridgeModal({
                 <div>
                   <div className="text-sm">Simulate (dry-run)</div>
                   <div className="text-[11px] text-muted">
-                    Walk the flow without sending a transaction.
+                    Walk the full route without sending a transaction.
                   </div>
                 </div>
                 <span
@@ -364,74 +386,40 @@ export function BridgeModal({
                   />
                 </span>
               </button>
-            )}
-
-            {step !== "idle" && step !== "quoted" && step !== "quoting" ? (
-              <div className="border-t border-border pt-2 space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-strong">
-                  {busy ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-gold" />
-                  ) : null}
-                  {step === "switching"
-                    ? `Switching to ${chainMeta.label}…`
-                    : step === "approving"
-                      ? `Approving ${source.symbol}…`
-                      : step === "bridging"
-                        ? "Bridging to Arbitrum…"
-                        : null}
-                </div>
-                {hashes.map((h, i) => (
-                  <a
-                    key={h}
-                    href={`${chainMeta.explorer}/tx/${h}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] font-mono uppercase tracking-wider text-accent hover:text-foreground inline-flex items-center gap-1"
-                  >
-                    tx {i + 1} <ExternalLink className="w-3 h-3" />
-                  </a>
-                ))}
-              </div>
             ) : null}
 
-            {error ? <p className="text-sm text-rose">{error}</p> : null}
+            {error && !bridgedButStuck ? (
+              <p className="text-sm text-rose">{error}</p>
+            ) : null}
 
             <button
               type="button"
-              onClick={onBridge}
-              disabled={invalid || busy || quoting || !quote}
+              onClick={onRun}
+              disabled={invalid || busy || quoting || !bridge.quote}
               className="btn-primary w-full rounded-md py-2.5 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {busy ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Working…
+                  {phase === "bridging"
+                    ? "Bridging…"
+                    : phase === "depositing"
+                      ? "Depositing…"
+                      : "Working…"}
                 </>
-              ) : step === "error" ? (
+              ) : phase === "error" ? (
                 "Try again"
               ) : preview ? (
-                "Preview bridge"
+                "Preview route"
               ) : simulate ? (
-                "Simulate bridge"
+                "Simulate route"
               ) : (
-                `Bring ${source.symbol} to Arbitrum`
+                `Bring & deposit into ${pool.projectLabel}`
               )}
             </button>
           </>
         )}
       </motion.div>
-
-      {depositOpen && arrived ? (
-        <DepositModal
-          pool={pool}
-          token={arrived}
-          preview={effectiveSimulate}
-          onClose={() => {
-            setDepositOpen(false);
-            onClose();
-          }}
-        />
-      ) : null}
     </div>
   );
 }
