@@ -2,6 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Wallet, Cpu, ArrowUpRight, ArrowRight, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 
 const stages = [
   { label: "balances loaded", delay: 0.6 },
@@ -23,6 +26,9 @@ const opps = [
 ];
 
 export function EngineVisual() {
+  const router = useRouter();
+  const { open } = useAppKit();
+  const { isConnected } = useAccount();
   return (
     <div className="relative w-full max-w-[520px] mx-auto">
       {/* Corner crosshairs (terminal feel) */}
@@ -294,6 +300,7 @@ export function EngineVisual() {
           </div>
           <button
             type="button"
+            onClick={() => (isConnected ? router.push("/app") : open())}
             className="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white whitespace-nowrap flex-shrink-0"
           >
             Deploy

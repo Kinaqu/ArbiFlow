@@ -124,13 +124,13 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
               <SourceBadge source={data.source} generatedAt={data.generatedAt} />
             </header>
 
+            {data.perToken.length > 0 && (
+              <PerTokenGrid sets={data.perToken} />
+            )}
+
             <ExploreTable pools={data.pools} />
 
-            {data.perToken.length > 0 ? (
-              <PerTokenGrid sets={data.perToken} />
-            ) : (
-              <EmptyPerToken />
-            )}
+            {data.perToken.length === 0 && <EmptyPerToken />}
           </motion.div>
         )}
       </AnimatePresence>
