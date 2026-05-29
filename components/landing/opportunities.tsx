@@ -225,7 +225,15 @@ export function Opportunities() {
                     {c.why}
                   </p>
                 </div>
-                <button className="w-full btn-ghost rounded-md py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 group-hover:bg-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("cta")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="w-full btn-ghost rounded-md py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 group-hover:bg-white/[0.06]"
+                >
                   Simulate strategy
                   <ArrowUpRight className="w-4 h-4" />
                 </button>

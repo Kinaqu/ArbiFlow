@@ -26,6 +26,10 @@
   --shadow-glow-gold: 0 0 60px -15px rgba(244, 181, 63, 0.35);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   background: var(--color-background);
   color: var(--color-foreground);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount } from "wagmi";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useScan } from "@/hooks/use-scan";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { IdleBanner } from "@/components/app/idle-banner";
@@ -22,6 +22,7 @@ export default function AppPage() {
 
   const { data, isLoading, isError, error } = useScan(activeAddress);
   const [generated, setGenerated] = useState(false);
+  const [showBalances, setShowBalances] = useState(false);
 
   if (!activeAddress) {
     return (
@@ -108,10 +109,22 @@ export default function AppPage() {
               onGenerate={() => setGenerated(true)}
             />
             <section className="space-y-4">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-                balance breakdown
-              </div>
-              <BalanceTable tokens={data.tokens} />
+              <button
+                type="button"
+                onClick={() => setShowBalances((v) => !v)}
+                aria-expanded={showBalances}
+                className="w-full flex items-center justify-between gap-3 text-left group"
+              >
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted group-hover:text-foreground transition-colors">
+                  balance breakdown · {data.tokens.length} assets
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 text-muted transition-transform ${
+                    showBalances ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {showBalances && <BalanceTable tokens={data.tokens} />}
             </section>
             {generated && <Opportunities scan={data} />}
           </>

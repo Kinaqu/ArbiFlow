@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useDisconnect } from "wagmi";
@@ -35,10 +35,15 @@ export function ConnectButton({
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
 
+  // Redirect only on the connect *transition* (false → true), not when a
+  // component mounts already-connected — otherwise returning to the landing
+  // while connected bounces the user straight back to /app.
+  const prevConnected = useRef(isConnected);
   useEffect(() => {
-    if (isConnected && redirectOnConnect) {
+    if (redirectOnConnect && isConnected && !prevConnected.current) {
       router.push("/app");
     }
+    prevConnected.current = isConnected;
   }, [isConnected, redirectOnConnect, router]);
 
   const baseBtn =
