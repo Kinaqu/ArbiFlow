@@ -1,6 +1,9 @@
 "use client";
 
 import { ArrowDown, Sparkles } from "lucide-react";
+import { fmtUsd } from "@/lib/format";
+import { yearlyYield } from "@/lib/earnings";
+import { REFERENCE_STABLE_APY } from "@/lib/constants";
 
 export function IdleBanner({
   idleUsd,
@@ -8,12 +11,14 @@ export function IdleBanner({
   tokenCount,
   generated,
   onGenerate,
+  refApy = REFERENCE_STABLE_APY,
 }: {
   idleUsd: number;
   totalUsd: number;
   tokenCount: number;
   generated: boolean;
   onGenerate: () => void;
+  refApy?: number;
 }) {
   const pct = totalUsd > 0 ? Math.round((idleUsd / totalUsd) * 100) : 0;
 
@@ -49,11 +54,17 @@ export function IdleBanner({
             idle capital detected
           </div>
           <div className="font-mono tabular text-5xl lg:text-6xl tracking-tight font-semibold gradient-text-gold leading-none">
-            ${idleUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+            {fmtUsd(idleUsd)}
           </div>
           <div className="mt-3 text-sm text-muted-strong">
-            {pct}% of your ${totalUsd.toLocaleString("en-US", { maximumFractionDigits: 0 })} total · {tokenCount} {tokenCount === 1 ? "asset" : "assets"} earning nothing
+            {pct}% of your {fmtUsd(totalUsd, 0)} total · {tokenCount} {tokenCount === 1 ? "asset" : "assets"} earning nothing
           </div>
+          {idleUsd > 0 ? (
+            <div className="mt-2 text-sm text-gold">
+              ≈ {fmtUsd(yearlyYield(idleUsd, refApy))}/yr left on the table
+              <span className="text-muted"> · at ~{refApy}% APY</span>
+            </div>
+          ) : null}
         </div>
         <div className="lg:col-span-5 flex lg:justify-end">
           <button

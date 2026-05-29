@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowUpRight, TrendingUp, AlertTriangle } from "lucide-react";
+import { PROTOCOL_COUNT } from "@/lib/constants";
 
 const cards = [
   {
@@ -109,7 +110,7 @@ export function Opportunities() {
                   {c.badge}
                 </span>
                 <span className="font-mono tabular text-[10px] uppercase tracking-widest text-muted">
-                  #{String(i + 1).padStart(2, "0")} / 42
+                  #{String(i + 1).padStart(2, "0")} / {PROTOCOL_COUNT}
                 </span>
               </div>
 

@@ -1,6 +1,8 @@
+import Link from "next/link";
+
 export function Logo({ size = 22 }: { size?: number }) {
   return (
-    <a href="/" className="flex items-center gap-2 group">
+    <Link href="/" className="flex items-center gap-2 group">
       <svg
         width={size}
         height={size}
@@ -26,6 +28,6 @@ export function Logo({ size = 22 }: { size?: number }) {
       <span className="text-base font-semibold tracking-tight">
         Arbi<span className="text-muted-strong">Flow</span>
       </span>
-    </a>
+    </Link>
   );
 }

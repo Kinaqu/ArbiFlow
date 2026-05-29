@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 import { ConnectButton } from "@/components/wallet/connect-button";
+import { PROTOCOL_COUNT } from "@/lib/constants";
 
 export function CTA() {
   return (
@@ -98,7 +99,7 @@ export function CTA() {
                     <span className="text-mint"> ✓</span>
                   </div>
                   <div className="text-muted-strong">
-                    → indexing 42 protocols
+                    → indexing {PROTOCOL_COUNT} protocols
                     <span className="text-mint"> ✓</span>
                   </div>
                   <div className="text-muted-strong">

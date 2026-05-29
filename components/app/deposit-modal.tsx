@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ExternalLink, Loader2, X } from "lucide-react";
 import { parseUnits } from "viem";
 import type { ScoredPool } from "@/lib/score";
 import type { ScannedToken } from "@/lib/scan";
 import { useDeposit, type DepositStep } from "@/hooks/use-deposit";
+import { fmtUsd } from "@/lib/format";
+import { monthlyYield, yearlyYield } from "@/lib/earnings";
+import { addPosition } from "@/lib/positions";
+import { EarningsTicker } from "@/components/app/earnings-ticker";
 
 const arbiscan = (hash: string) => `https://arbiscan.io/tx/${hash}`;
-
-const fmtUsd = (n: number) =>
-  `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
 function TxRow({
   label,
@@ -112,6 +113,22 @@ export function DepositModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [busy, onClose]);
 
+  // Record the (mostly simulated) position once on success → /portfolio.
+  const recorded = useRef(false);
+  useEffect(() => {
+    if (step !== "done" || recorded.current) return;
+    recorded.current = true;
+    addPosition({
+      poolId: pool.id,
+      project: pool.project,
+      projectLabel: pool.projectLabel,
+      symbol: token.symbol,
+      amountUsd: usd ?? amountNum,
+      apy: pool.apy,
+      simulated: effectiveSimulate,
+    });
+  }, [step, pool, token, usd, amountNum, effectiveSimulate]);
+
   function onAmountChange(raw: string) {
     let v = raw.replace(/[^0-9.]/g, "");
     const [int, frac] = v.split(".");
@@ -161,16 +178,42 @@ export function DepositModal({
 
         {step === "done" ? (
           <div className="rounded-lg border border-mint/30 bg-mint/5 p-4 space-y-3">
-            <div className="flex items-center gap-2 text-mint text-sm font-medium">
-              <Check className="w-4 h-4" />
-              {effectiveSimulate
-                ? "Simulated deposit complete"
-                : "Deposit confirmed"}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-mint text-sm font-medium">
+                <Check className="w-4 h-4" />
+                {effectiveSimulate
+                  ? "Simulated deposit complete"
+                  : "Deposit confirmed"}
+              </div>
+              {effectiveSimulate ? (
+                <span className="text-[9px] font-mono uppercase tracking-wider text-gold border border-gold/40 bg-gold/10 rounded px-1.5 py-0.5">
+                  simulated
+                </span>
+              ) : null}
             </div>
             <p className="text-sm text-muted-strong">
               Supplied {amount} {token.symbol} to Aave V3 — now earning yield as
               a{token.symbol}. Withdraw anytime from Aave.
             </p>
+            <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-0.5">
+                  projected
+                </div>
+                <div className="font-mono tabular text-sm text-mint">
+                  +{fmtUsd(yearlyYield(amountNum, pool.apy))}/yr
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-0.5">
+                  earning now
+                </div>
+                <div className="text-sm">
+                  <EarningsTicker amountUsd={usd ?? amountNum} apy={pool.apy} />{" "}
+                  <span className="text-muted text-[10px]">live</span>
+                </div>
+              </div>
+            </div>
             <div className="border-t border-border pt-1">
               <TxRow
                 label={`Approve ${token.symbol}`}
@@ -228,6 +271,18 @@ export function DepositModal({
                 ) : null}
               </div>
             </div>
+
+            {amountNum > 0 ? (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted">Projected yield</span>
+                <span className="font-mono tabular text-mint">
+                  +{fmtUsd(yearlyYield(amountNum, pool.apy))}/yr
+                  <span className="text-muted">
+                    {" "}· +{fmtUsd(monthlyYield(amountNum, pool.apy))}/mo
+                  </span>
+                </span>
+              </div>
+            ) : null}
 
             {preview ? (
               <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2.5 text-[11px] text-muted-strong">

@@ -8,6 +8,7 @@ import { ConnectButton } from "@/components/wallet/connect-button";
 const links = [
   { label: "Engine", href: "/engine" },
   { label: "Strategies", href: "/strategies" },
+  { label: "Portfolio", href: "/portfolio" },
   { label: "Risk model", href: "/risk-model" },
   { label: "Docs", href: "/docs" },
 ];

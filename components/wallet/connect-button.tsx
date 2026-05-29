@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useDisconnect } from "wagmi";
+import { formatAddress } from "@/lib/format";
 
 type Variant = "primary" | "ghost";
 type Size = "sm" | "md" | "lg";
@@ -13,9 +14,6 @@ const sizeClasses: Record<Size, string> = {
   md: "px-5 py-3 text-sm gap-2",
   lg: "px-6 py-3.5 text-base gap-2",
 };
-
-const formatAddress = (addr: string) =>
-  `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 
 export function ConnectButton({
   children,

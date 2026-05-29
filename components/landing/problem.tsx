@@ -1,7 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
-
 export function Problem() {
   return (
     <section className="relative border-y border-border bg-surface/30">

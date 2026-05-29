@@ -24,17 +24,10 @@ import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
 import { isAaveExecutable, poolUrl } from "@/lib/aave";
+import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
+import { yearlyYield } from "@/lib/earnings";
 import { DepositModal } from "@/components/app/deposit-modal";
-
-const fmtApy = (apy: number) => `${apy.toFixed(2)}%`;
-const fmtTvl = (n: number) => {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
-const fmtUsd = (n: number) =>
-  `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+import { PoolChart } from "@/components/app/pool-chart";
 
 const BREAKDOWN_LABELS: Record<keyof typeof SCORE_MAX, string> = {
   apy: "APY",
@@ -176,9 +169,8 @@ function GenerationPipeline({ phase }: { phase: GenPhase }) {
     return () => clearInterval(id);
   }, [phase]);
 
-  useEffect(() => {
-    if (phase === "ranking" || phase === "ready") setCount(target);
-  }, [phase]);
+  // Once past scoring, show the full count without a setState-in-effect.
+  const shown = phase === "scoring" ? count : target;
 
   const phases: Array<Exclude<GenPhase, "ready">> = [
     "fetching",
@@ -229,7 +221,7 @@ function GenerationPipeline({ phase }: { phase: GenPhase }) {
               </div>
               <span className="text-[10px] font-mono uppercase tracking-wider text-muted">
                 {p === "scoring"
-                  ? `${count} / ${target} pools`
+                  ? `${shown} / ${target} pools`
                   : status === "done"
                     ? "done"
                     : status === "active"
@@ -360,6 +352,14 @@ function TokenCard({
           <div className="font-mono tabular text-2xl font-semibold gradient-text-gold leading-none">
             {fmtUsd(set.balanceUsd)}
           </div>
+          {set.topPools[0] ? (
+            <div className="mt-1.5 text-[11px] font-mono text-mint">
+              → up to +{fmtUsd(yearlyYield(set.balanceUsd, set.topPools[0].apy))}/yr
+              <span className="text-muted">
+                {" "}at {fmtApy(set.topPools[0].apy)}
+              </span>
+            </div>
+          ) : null}
         </div>
         <div className="text-[10px] font-mono uppercase tracking-wider text-muted">
           top {set.topPools.length}
@@ -481,6 +481,7 @@ function PoolBreakdown({
     <div className="px-5 pb-4 pt-1 bg-surface-2/40 border-t border-border space-y-3">
       <p className="text-sm text-muted-strong">{pool.rationale}</p>
       <BreakdownBars breakdown={pool.breakdown} />
+      <PoolChart poolId={pool.id} />
       <div className="pt-1">
         {executable && token ? (
           <button
