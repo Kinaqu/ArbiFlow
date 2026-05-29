@@ -28,6 +28,9 @@ import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
 import { yearlyYield } from "@/lib/earnings";
 import { DepositModal } from "@/components/app/deposit-modal";
 import { PoolChart } from "@/components/app/pool-chart";
+import iconManifest from "@/lib/icon-manifest.json";
+
+const ICON_SLUGS = new Set(iconManifest as string[]);
 
 const BREAKDOWN_LABELS: Record<keyof typeof SCORE_MAX, string> = {
   apy: "APY",
@@ -68,6 +71,15 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
     address.toLowerCase() === scan.address.toLowerCase()
       ? "real"
       : "preview";
+
+  // Symbol → held token, for the Explore table's "in wallet" awareness.
+  const held = useMemo(() => {
+    const m = new Map<string, ScannedToken>();
+    for (const t of scan.tokens) {
+      if (t.balanceFormatted > 0) m.set(t.symbol.toUpperCase(), t);
+    }
+    return m;
+  }, [scan]);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("scoring"), 700);
@@ -143,7 +155,7 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
               />
             )}
 
-            <ExploreTable pools={data.pools} />
+            <ExploreTable pools={data.pools} held={held} />
 
             {data.perToken.length === 0 && <EmptyPerToken />}
           </motion.div>
@@ -243,7 +255,10 @@ function ProtocolIcon({
   iconPath: string;
   tier: "core" | "honorable";
 }) {
-  const [failed, setFailed] = useState(false);
+  // Skip the <img> entirely for protocols we have no local icon for — avoids a
+  // guaranteed 404 to /icons/protocols/<slug>.png (honorable tier rotates).
+  const slug = iconPath.split("/").pop()?.replace(/\.png$/, "") ?? "";
+  const [failed, setFailed] = useState(() => !ICON_SLUGS.has(slug));
   if (failed) {
     return tier === "core" ? (
       <Shield className="w-5 h-5 text-accent flex-shrink-0" />
@@ -648,11 +663,62 @@ function MinFilter({
   );
 }
 
-function ExploreTable({ pools }: { pools: ScoredPool[] }) {
+type HoldingStatus = "full" | "partial" | "none";
+
+function holdingFor(
+  symbols: string[],
+  held: Map<string, ScannedToken>,
+): { status: HoldingStatus; usd: number; idle: boolean } {
+  const owned = symbols.filter((s) => held.has(s));
+  if (owned.length === 0) return { status: "none", usd: 0, idle: false };
+  const usd = owned.reduce((sum, s) => sum + (held.get(s)?.usdValue ?? 0), 0);
+  const idle = owned.some((s) => held.get(s)?.idle);
+  return {
+    status: owned.length === symbols.length ? "full" : "partial",
+    usd,
+    idle,
+  };
+}
+
+function HoldingBadge({
+  symbols,
+  held,
+}: {
+  symbols: string[];
+  held: Map<string, ScannedToken>;
+}) {
+  const { status, usd, idle } = holdingFor(symbols, held);
+  if (status === "none") {
+    return (
+      <span className="text-[9px] font-mono uppercase tracking-wider text-muted border border-border rounded px-1 py-0.5 flex-shrink-0">
+        not held
+      </span>
+    );
+  }
+  return (
+    <span
+      className="text-[9px] font-mono uppercase tracking-wider text-mint border border-mint/40 bg-mint/10 rounded px-1 py-0.5 inline-flex items-center gap-1 flex-shrink-0"
+      title={idle ? "in your wallet · idle capital" : "in your wallet"}
+    >
+      <span className="w-1 h-1 rounded-full bg-mint" />
+      in wallet · {fmtUsd(usd)}
+      {status === "partial" ? <span className="text-muted">· partial</span> : null}
+    </span>
+  );
+}
+
+function ExploreTable({
+  pools,
+  held,
+}: {
+  pools: ScoredPool[];
+  held: Map<string, ScannedToken>;
+}) {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [search, setSearch] = useState("");
   const [curatedOnly, setCuratedOnly] = useState(false);
+  const [heldOnly, setHeldOnly] = useState(false);
   const [minApy, setMinApy] = useState("");
   const [minTvl, setMinTvl] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -669,6 +735,8 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
     return pools
       .filter((p) => {
         if (curatedOnly && !p.portalFeatured) return false;
+        if (heldOnly && holdingFor(p.symbols, held).status === "none")
+          return false;
         if (p.apy < minApyN) return false;
         if (p.tvlUsd < minTvlN) return false;
         if (q && !`${p.projectLabel} ${p.symbol}`.toUpperCase().includes(q))
@@ -680,7 +748,7 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
         if (diff !== 0) return diff * dir;
         return a.id.localeCompare(b.id);
       });
-  }, [pools, search, curatedOnly, minApy, minTvl, sortKey, sortDir]);
+  }, [pools, held, search, curatedOnly, heldOnly, minApy, minTvl, sortKey, sortDir]);
 
   const visible = filtered.slice(0, visibleCount);
 
@@ -747,6 +815,21 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
         >
           curated by Arbitrum
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setHeldOnly((v) => !v);
+            resetPaging();
+          }}
+          aria-pressed={heldOnly}
+          className={`text-[11px] font-mono uppercase tracking-wider rounded-lg px-3 py-1.5 border transition-colors ${
+            heldOnly
+              ? "border-mint/50 bg-mint/10 text-mint"
+              : "border-border text-muted hover:text-foreground"
+          }`}
+        >
+          in my wallet
+        </button>
       </div>
 
       <div className="rounded-xl border border-border bg-surface">
@@ -812,6 +895,7 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
                       {pool.portalFeatured ? (
                         <CuratedBadge category={pool.portalCategory} />
                       ) : null}
+                      <HoldingBadge symbols={pool.symbols} held={held} />
                     </div>
                   </div>
                 </div>

@@ -10,10 +10,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
 const snapshotPath = resolve(repoRoot, "lib", "data", "arbitrum-pools-snapshot.json");
 const outDir = resolve(repoRoot, "public", "icons", "protocols");
+const manifestPath = resolve(repoRoot, "lib", "icon-manifest.json");
 
 // Always pull these even if absent from the current snapshot — Portal tier
 // + curated set are referenced by code.
 const ALWAYS_FETCH = [
+  // Curated + Portal tiers (referenced by code).
   "aave-v3",
   "radiant-v2",
   "gmx-v2-perps",
@@ -26,6 +28,25 @@ const ALWAYS_FETCH = [
   "fluid-lending",
   "lido",
   "ether-fi",
+  // Common Arbitrum "honorable" tier projects that rotate through the live
+  // feed (absent from a frozen snapshot) — fetch so they show a real logo.
+  "gains-network",
+  "dolomite",
+  "beefy",
+  "balancer-v2",
+  "euler-v2",
+  "gamma",
+  "stake-dao",
+  "harvest-finance",
+  "camelot-v2",
+  "uniswap-v4",
+  "silo-v2",
+  "lodestar",
+  "curve-llamalend",
+  "fluid-dex",
+  "steer-protocol",
+  "tender-finance",
+  "paraspace-lending-v1",
 ];
 
 const EXT_CANDIDATES = ["png", "jpg"];
@@ -59,7 +80,7 @@ async function main() {
   console.log(`Fetching ${slugs.length} protocol icons…`);
 
   const misses = [];
-  let hits = 0;
+  const saved = [];
   for (const slug of slugs) {
     const result = await tryFetch(slug);
     if (!result) {
@@ -68,10 +89,16 @@ async function main() {
     }
     const outPath = resolve(outDir, `${slug}.png`);
     await writeFile(outPath, result.buf);
-    hits += 1;
+    saved.push(slug);
   }
 
-  console.log(`\nDone. ${hits} icons saved, ${misses.length} misses.`);
+  // Manifest of slugs we actually have a local PNG for — the UI checks this so
+  // it never requests an icon that would 404 (falls back to a lucide glyph).
+  saved.sort();
+  await writeFile(manifestPath, JSON.stringify(saved, null, 2) + "\n", "utf8");
+
+  console.log(`\nDone. ${saved.length} icons saved, ${misses.length} misses.`);
+  console.log(`Wrote manifest (${saved.length} slugs) to ${manifestPath}`);
   if (misses.length > 0) {
     console.log("Misses (will fall back to lucide in UI):");
     for (const m of misses) console.log(`  ${m}`);
