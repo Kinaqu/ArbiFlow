@@ -102,7 +102,7 @@ export function useBridge() {
           await sleep(1200);
           setHashes((h) => [...h, fakeHash()]);
           setStep("done");
-          return;
+          return true;
         }
 
         if (!quote) throw new Error("Request a quote first");
@@ -137,9 +137,11 @@ export function useBridge() {
         setStep("bridging");
         if (quote.requestId) await pollStatus(quote.requestId);
         setStep("done");
+        return true;
       } catch (e) {
         setError(short(e));
         setStep("error");
+        return false;
       }
     },
     [config, quote],
