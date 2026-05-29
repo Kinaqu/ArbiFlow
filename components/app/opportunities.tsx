@@ -25,7 +25,9 @@ import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
 import { isAaveExecutable, poolUrl } from "@/lib/aave";
 import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
+import { yearlyYield } from "@/lib/earnings";
 import { DepositModal } from "@/components/app/deposit-modal";
+import { PoolChart } from "@/components/app/pool-chart";
 
 const BREAKDOWN_LABELS: Record<keyof typeof SCORE_MAX, string> = {
   apy: "APY",
@@ -350,6 +352,14 @@ function TokenCard({
           <div className="font-mono tabular text-2xl font-semibold gradient-text-gold leading-none">
             {fmtUsd(set.balanceUsd)}
           </div>
+          {set.topPools[0] ? (
+            <div className="mt-1.5 text-[11px] font-mono text-mint">
+              → up to +{fmtUsd(yearlyYield(set.balanceUsd, set.topPools[0].apy))}/yr
+              <span className="text-muted">
+                {" "}at {fmtApy(set.topPools[0].apy)}
+              </span>
+            </div>
+          ) : null}
         </div>
         <div className="text-[10px] font-mono uppercase tracking-wider text-muted">
           top {set.topPools.length}
@@ -471,6 +481,7 @@ function PoolBreakdown({
     <div className="px-5 pb-4 pt-1 bg-surface-2/40 border-t border-border space-y-3">
       <p className="text-sm text-muted-strong">{pool.rationale}</p>
       <BreakdownBars breakdown={pool.breakdown} />
+      <PoolChart poolId={pool.id} />
       <div className="pt-1">
         {executable && token ? (
           <button
