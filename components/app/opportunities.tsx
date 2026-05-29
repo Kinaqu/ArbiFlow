@@ -17,14 +17,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useAccount } from "wagmi";
-import { useAppKit } from "@reown/appkit/react";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { SCORE_MAX } from "@/lib/score";
 import type { MatchedPool, OpportunitySet } from "@/lib/opportunities";
 import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
-import { isAaveExecutable, protocolUrl } from "@/lib/aave";
+import { isAaveExecutable, poolUrl } from "@/lib/aave";
 import { DepositModal } from "@/components/app/deposit-modal";
 
 const fmtApy = (apy: number) => `${apy.toFixed(2)}%`;
@@ -47,6 +46,8 @@ const BREAKDOWN_LABELS: Record<keyof typeof SCORE_MAX, string> = {
 
 type GenPhase = "fetching" | "scoring" | "ranking" | "ready";
 
+type ExecuteMode = "real" | "preview";
+
 const PHASE_LABELS: Record<Exclude<GenPhase, "ready">, string> = {
   fetching: "Fetching live pools",
   scoring: "Scoring opportunities",
@@ -65,12 +66,15 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
   const { address, isConnected } = useAccount();
   const [phase, setPhase] = useState<GenPhase>("fetching");
 
-  // Real deposits only when the connected wallet is the one being scanned
-  // (demo `?address=` mode is read-only and can't sign).
-  const canExecute =
+  // Real deposits only when the connected wallet is the one being scanned.
+  // Otherwise (sample `?address=` mode, or a different connected wallet) the
+  // deposit flow runs as a non-signable preview.
+  const executeMode: ExecuteMode =
     isConnected &&
     !!address &&
-    address.toLowerCase() === scan.address.toLowerCase();
+    address.toLowerCase() === scan.address.toLowerCase()
+      ? "real"
+      : "preview";
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("scoring"), 700);
@@ -142,7 +146,7 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
               <PerTokenGrid
                 sets={data.perToken}
                 scan={scan}
-                canExecute={canExecute}
+                executeMode={executeMode}
               />
             )}
 
@@ -312,11 +316,11 @@ function SourceBadge({
 function PerTokenGrid({
   sets,
   scan,
-  canExecute,
+  executeMode,
 }: {
   sets: OpportunitySet[];
   scan: ScanResult;
-  canExecute: boolean;
+  executeMode: ExecuteMode;
 }) {
   return (
     <div className="space-y-4">
@@ -329,7 +333,7 @@ function PerTokenGrid({
             key={set.symbol}
             set={set}
             token={scan.tokens.find((t) => t.symbol === set.symbol)}
-            canExecute={canExecute}
+            executeMode={executeMode}
           />
         ))}
       </div>
@@ -340,11 +344,11 @@ function PerTokenGrid({
 function TokenCard({
   set,
   token,
-  canExecute,
+  executeMode,
 }: {
   set: OpportunitySet;
   token: ScannedToken | undefined;
-  canExecute: boolean;
+  executeMode: ExecuteMode;
 }) {
   return (
     <article className="rounded-xl border border-border bg-surface overflow-hidden">
@@ -367,7 +371,7 @@ function TokenCard({
             key={pool.id}
             pool={pool}
             token={token}
-            canExecute={canExecute}
+            executeMode={executeMode}
           />
         ))}
       </ul>
@@ -378,11 +382,11 @@ function TokenCard({
 function PoolRow({
   pool,
   token,
-  canExecute,
+  executeMode,
 }: {
   pool: MatchedPool;
   token: ScannedToken | undefined;
-  canExecute: boolean;
+  executeMode: ExecuteMode;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -425,7 +429,7 @@ function PoolRow({
         </div>
       </button>
       {open ? (
-        <PoolBreakdown pool={pool} token={token} canExecute={canExecute} />
+        <PoolBreakdown pool={pool} token={token} executeMode={executeMode} />
       ) : null}
     </li>
   );
@@ -461,13 +465,12 @@ function BreakdownBars({ breakdown }: { breakdown: ScoreBreakdown }) {
 function PoolBreakdown({
   pool,
   token,
-  canExecute,
+  executeMode,
 }: {
   pool: MatchedPool;
   token: ScannedToken | undefined;
-  canExecute: boolean;
+  executeMode: ExecuteMode;
 }) {
-  const { open } = useAppKit();
   const [depositOpen, setDepositOpen] = useState(false);
   const executable =
     !!token &&
@@ -480,27 +483,17 @@ function PoolBreakdown({
       <BreakdownBars breakdown={pool.breakdown} />
       <div className="pt-1">
         {executable && token ? (
-          canExecute ? (
-            <button
-              type="button"
-              onClick={() => setDepositOpen(true)}
-              className="btn-primary inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white"
-            >
-              Deposit {token.symbol}
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => open()}
-              className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground"
-            >
-              Connect wallet to deposit
-            </button>
-          )
+          <button
+            type="button"
+            onClick={() => setDepositOpen(true)}
+            className="btn-primary inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white"
+          >
+            {executeMode === "preview" ? "Preview deposit" : `Deposit ${token.symbol}`}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         ) : (
           <a
-            href={protocolUrl(pool.project)}
+            href={poolUrl(pool)}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground"
@@ -514,6 +507,7 @@ function PoolBreakdown({
         <DepositModal
           pool={pool}
           token={token}
+          preview={executeMode === "preview"}
           onClose={() => setDepositOpen(false)}
         />
       ) : null}
@@ -803,10 +797,10 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
                     <div className="text-sm font-medium truncate flex items-center gap-1.5">
                       <span className="truncate">{pool.projectLabel}</span>
                       <a
-                        href={protocolUrl(pool.project)}
+                        href={poolUrl(pool)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title={`Open on ${pool.projectLabel}`}
+                        title={`Open ${pool.projectLabel} pool on DeFiLlama`}
                         className="text-muted hover:text-foreground flex-shrink-0"
                       >
                         <ExternalLink className="w-3 h-3" />

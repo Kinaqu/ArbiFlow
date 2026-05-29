@@ -46,23 +46,10 @@ export function isAaveExecutable(project: string, heldSymbol: string): boolean {
   return project === "aave-v3" && aaveReserveFor(heldSymbol) !== null;
 }
 
-const PROTOCOL_APP_URLS: Record<string, string> = {
-  "aave-v3": "https://app.aave.com/?marketName=proto_arbitrum_v3",
-  "gmx-v2-perps": "https://app.gmx.io/#/pools",
-  "uniswap-v3": "https://app.uniswap.org/pools",
-  pendle: "https://app.pendle.finance/trade/markets",
-  "camelot-v3": "https://app.camelot.exchange/",
-  "curve-dex": "https://curve.fi/",
-  "compound-v3": "https://app.compound.finance/",
-  "radiant-v2": "https://app.radiant.capital/",
-  "morpho-blue": "https://app.morpho.org/",
-  "fluid-lending": "https://fluid.instadapp.io/",
-};
-
-/** External app URL for a protocol, falling back to its DeFiLlama page. */
-export function protocolUrl(project: string): string {
-  return (
-    PROTOCOL_APP_URLS[project] ??
-    `https://defillama.com/protocol/${project}`
-  );
+/**
+ * Deep-link to the exact pool on DeFiLlama's yield page (works for every
+ * protocol from the `pool.id` we already store, and links out to the protocol).
+ */
+export function poolUrl(pool: { id: string }): string {
+  return `https://defillama.com/yields/pool/${pool.id}`;
 }

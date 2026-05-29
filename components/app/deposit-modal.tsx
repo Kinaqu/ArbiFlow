@@ -77,15 +77,19 @@ function supplyState(step: DepositStep) {
 export function DepositModal({
   pool,
   token,
+  preview,
   onClose,
 }: {
   pool: ScoredPool;
   token: ScannedToken;
+  preview: boolean;
   onClose: () => void;
 }) {
   const { step, approveHash, supplyHash, error, run } = useDeposit();
   const [amount, setAmount] = useState(String(token.balanceFormatted));
   const [simulate, setSimulate] = useState(false);
+  // Sample-wallet preview can never sign — it always runs the dry-run.
+  const effectiveSimulate = preview || simulate;
 
   const busy = step === "switching" || step === "approving" || step === "supplying";
   const balance = token.balanceFormatted;
@@ -117,7 +121,7 @@ export function DepositModal({
 
   async function onDeposit() {
     if (invalid || token.address === "native") return;
-    await run({ asset: token.address, amount: parsed, simulate });
+    await run({ asset: token.address, amount: parsed, simulate: effectiveSimulate });
   }
 
   return (
@@ -159,7 +163,9 @@ export function DepositModal({
           <div className="rounded-lg border border-mint/30 bg-mint/5 p-4 space-y-3">
             <div className="flex items-center gap-2 text-mint text-sm font-medium">
               <Check className="w-4 h-4" />
-              {simulate ? "Simulated deposit complete" : "Deposit confirmed"}
+              {effectiveSimulate
+                ? "Simulated deposit complete"
+                : "Deposit confirmed"}
             </div>
             <p className="text-sm text-muted-strong">
               Supplied {amount} {token.symbol} to Aave V3 — now earning yield as
@@ -223,31 +229,39 @@ export function DepositModal({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setSimulate((v) => !v)}
-              disabled={busy}
-              aria-pressed={simulate}
-              className="flex items-center justify-between w-full text-left disabled:opacity-60"
-            >
-              <div>
-                <div className="text-sm">Simulate (dry-run)</div>
-                <div className="text-[11px] text-muted">
-                  Walk the flow without sending a transaction.
-                </div>
+            {preview ? (
+              <div className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2.5 text-[11px] text-muted-strong">
+                <span className="text-gold font-medium">Sample wallet</span> —
+                preview only, signing is disabled. Connect your own wallet to
+                deposit for real.
               </div>
-              <span
-                className={`w-9 h-5 rounded-full p-0.5 transition-colors flex-shrink-0 ${
-                  simulate ? "bg-accent" : "bg-border"
-                }`}
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSimulate((v) => !v)}
+                disabled={busy}
+                aria-pressed={simulate}
+                className="flex items-center justify-between w-full text-left disabled:opacity-60"
               >
+                <div>
+                  <div className="text-sm">Simulate (dry-run)</div>
+                  <div className="text-[11px] text-muted">
+                    Walk the flow without sending a transaction.
+                  </div>
+                </div>
                 <span
-                  className={`block w-4 h-4 rounded-full bg-white transition-transform ${
-                    simulate ? "translate-x-4" : ""
+                  className={`w-9 h-5 rounded-full p-0.5 transition-colors flex-shrink-0 ${
+                    simulate ? "bg-accent" : "bg-border"
                   }`}
-                />
-              </span>
-            </button>
+                >
+                  <span
+                    className={`block w-4 h-4 rounded-full bg-white transition-transform ${
+                      simulate ? "translate-x-4" : ""
+                    }`}
+                  />
+                </span>
+              </button>
+            )}
 
             {step !== "idle" ? (
               <div className="border-t border-border pt-1">
@@ -291,8 +305,10 @@ export function DepositModal({
                 </>
               ) : step === "error" ? (
                 "Try again"
+              ) : preview ? (
+                "Preview deposit"
               ) : simulate ? (
-                `Simulate deposit`
+                "Simulate deposit"
               ) : (
                 `Deposit ${token.symbol}`
               )}
