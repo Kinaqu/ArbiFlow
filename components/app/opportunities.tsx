@@ -4,22 +4,28 @@ import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowDown,
+  ArrowRight,
   ArrowRightLeft,
   ArrowUp,
   Check,
   ChevronDown,
+  ExternalLink,
   Loader2,
   Search,
   Shield,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { useAccount } from "wagmi";
+import { useAppKit } from "@reown/appkit/react";
 import { useOpportunities } from "@/hooks/use-opportunities";
 import { SCORE_MAX } from "@/lib/score";
 import type { MatchedPool, OpportunitySet } from "@/lib/opportunities";
 import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
-import type { ScanResult } from "@/lib/scan";
+import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
+import { isAaveExecutable, protocolUrl } from "@/lib/aave";
+import { DepositModal } from "@/components/app/deposit-modal";
 
 const fmtApy = (apy: number) => `${apy.toFixed(2)}%`;
 const fmtTvl = (n: number) => {
@@ -56,7 +62,15 @@ const PHASE_ORDER: Record<GenPhase, number> = {
 
 export function Opportunities({ scan }: { scan: ScanResult }) {
   const { data, isLoading, isError } = useOpportunities(scan, true);
+  const { address, isConnected } = useAccount();
   const [phase, setPhase] = useState<GenPhase>("fetching");
+
+  // Real deposits only when the connected wallet is the one being scanned
+  // (demo `?address=` mode is read-only and can't sign).
+  const canExecute =
+    isConnected &&
+    !!address &&
+    address.toLowerCase() === scan.address.toLowerCase();
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("scoring"), 700);
@@ -125,7 +139,11 @@ export function Opportunities({ scan }: { scan: ScanResult }) {
             </header>
 
             {data.perToken.length > 0 && (
-              <PerTokenGrid sets={data.perToken} />
+              <PerTokenGrid
+                sets={data.perToken}
+                scan={scan}
+                canExecute={canExecute}
+              />
             )}
 
             <ExploreTable pools={data.pools} />
@@ -291,7 +309,15 @@ function SourceBadge({
   );
 }
 
-function PerTokenGrid({ sets }: { sets: OpportunitySet[] }) {
+function PerTokenGrid({
+  sets,
+  scan,
+  canExecute,
+}: {
+  sets: OpportunitySet[];
+  scan: ScanResult;
+  canExecute: boolean;
+}) {
   return (
     <div className="space-y-4">
       <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
@@ -299,14 +325,27 @@ function PerTokenGrid({ sets }: { sets: OpportunitySet[] }) {
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
         {sets.map((set) => (
-          <TokenCard key={set.symbol} set={set} />
+          <TokenCard
+            key={set.symbol}
+            set={set}
+            token={scan.tokens.find((t) => t.symbol === set.symbol)}
+            canExecute={canExecute}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function TokenCard({ set }: { set: OpportunitySet }) {
+function TokenCard({
+  set,
+  token,
+  canExecute,
+}: {
+  set: OpportunitySet;
+  token: ScannedToken | undefined;
+  canExecute: boolean;
+}) {
   return (
     <article className="rounded-xl border border-border bg-surface overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-baseline justify-between gap-3">
@@ -324,14 +363,27 @@ function TokenCard({ set }: { set: OpportunitySet }) {
       </div>
       <ul className="divide-y hairline">
         {set.topPools.map((pool) => (
-          <PoolRow key={pool.id} pool={pool} />
+          <PoolRow
+            key={pool.id}
+            pool={pool}
+            token={token}
+            canExecute={canExecute}
+          />
         ))}
       </ul>
     </article>
   );
 }
 
-function PoolRow({ pool }: { pool: MatchedPool }) {
+function PoolRow({
+  pool,
+  token,
+  canExecute,
+}: {
+  pool: MatchedPool;
+  token: ScannedToken | undefined;
+  canExecute: boolean;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <li>
@@ -372,7 +424,9 @@ function PoolRow({ pool }: { pool: MatchedPool }) {
           />
         </div>
       </button>
-      {open ? <PoolBreakdown pool={pool} /> : null}
+      {open ? (
+        <PoolBreakdown pool={pool} token={token} canExecute={canExecute} />
+      ) : null}
     </li>
   );
 }
@@ -404,11 +458,65 @@ function BreakdownBars({ breakdown }: { breakdown: ScoreBreakdown }) {
   );
 }
 
-function PoolBreakdown({ pool }: { pool: MatchedPool }) {
+function PoolBreakdown({
+  pool,
+  token,
+  canExecute,
+}: {
+  pool: MatchedPool;
+  token: ScannedToken | undefined;
+  canExecute: boolean;
+}) {
+  const { open } = useAppKit();
+  const [depositOpen, setDepositOpen] = useState(false);
+  const executable =
+    !!token &&
+    token.address !== "native" &&
+    isAaveExecutable(pool.project, token.symbol);
+
   return (
     <div className="px-5 pb-4 pt-1 bg-surface-2/40 border-t border-border space-y-3">
       <p className="text-sm text-muted-strong">{pool.rationale}</p>
       <BreakdownBars breakdown={pool.breakdown} />
+      <div className="pt-1">
+        {executable && token ? (
+          canExecute ? (
+            <button
+              type="button"
+              onClick={() => setDepositOpen(true)}
+              className="btn-primary inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white"
+            >
+              Deposit {token.symbol}
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => open()}
+              className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground"
+            >
+              Connect wallet to deposit
+            </button>
+          )
+        ) : (
+          <a
+            href={protocolUrl(pool.project)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-foreground"
+          >
+            Open on {pool.projectLabel}
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
+      </div>
+      {depositOpen && token ? (
+        <DepositModal
+          pool={pool}
+          token={token}
+          onClose={() => setDepositOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -692,8 +800,17 @@ function ExploreTable({ pools }: { pools: ScoredPool[] }) {
                 <div className="col-span-7 md:col-span-5 min-w-0 flex items-center gap-2.5">
                   <ProtocolIcon iconPath={pool.iconPath} tier={pool.tier} />
                   <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {pool.projectLabel}
+                    <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                      <span className="truncate">{pool.projectLabel}</span>
+                      <a
+                        href={protocolUrl(pool.project)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Open on ${pool.projectLabel}`}
+                        className="text-muted hover:text-foreground flex-shrink-0"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                     <div className="text-[11px] text-muted font-mono truncate flex items-center gap-1.5">
                       <span className="truncate">{pool.symbol}</span>
