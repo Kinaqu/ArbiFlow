@@ -13,7 +13,7 @@ const metadata = {
   description:
     "Deploy idle capital into optimized DeFi yield on Arbitrum — in one click.",
   url: "https://arbiflow.xyz",
-  icons: ["https://arbiflow.xyz/icon.png"],
+  icons: ["https://arbiflow.xyz/icon.svg"],
 };
 
 createAppKit({

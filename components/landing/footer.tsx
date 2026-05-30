@@ -28,8 +28,7 @@ const cols: { title: string; items: Item[] }[] = [
     title: "Company",
     items: [
       { label: "About", href: "/about" },
-      { label: "Twitter / X", href: "https://twitter.com/arbiflow", external: true },
-      { label: "GitHub", href: "https://github.com/arbiflow", external: true },
+      { label: "GitHub", href: "https://github.com/Kinaqu/ArbiFlow", external: true },
       { label: "Contact", href: "/contact" },
       { label: "Press kit", href: "/press-kit" },
     ],
