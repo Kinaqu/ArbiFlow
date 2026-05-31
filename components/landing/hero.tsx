@@ -1,34 +1,122 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import {
+  motion,
+  animate,
+  useInView,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
 import { ArrowRight, Lock } from "lucide-react";
 import { EngineVisual } from "./engine-visual";
+import { ProtocolConstellation } from "./protocol-constellation";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
-export function Hero() {
+const container: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+const item: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+// Animated number that counts up from 0 the first time it scrolls into view.
+function CountUp({
+  value,
+  decimals = 0,
+  suffix = "",
+}: {
+  value: number;
+  decimals?: number;
+  suffix?: string;
+}) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  // No horizontal margin: a uniform negative margin would push the leftmost
+  // stat (sitting in the page gutter) out of the detection box on narrow widths.
+  const inView = useInView(ref, { once: true });
+  // Always start at 0 so server and client markup match (reduced-motion is a
+  // client-only signal — branching on it in initial state desyncs hydration).
+  // Reduced motion just snaps to the final value via a zero-duration tween.
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(0, value, {
+      duration: reduce ? 0 : 1.1,
+      ease: "easeOut",
+      onUpdate: (v) => setDisplay(v),
+    });
+    return () => controls.stop();
+  }, [inView, value, reduce]);
+
   return (
-    <section className="relative">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 pt-16 lg:pt-24 pb-20 lg:pb-28">
+    <span ref={ref} className="tabular">
+      {display.toFixed(decimals)}
+      {suffix}
+    </span>
+  );
+}
+
+const stats: { node: React.ReactNode; l: string }[] = [
+  { node: <CountUp value={PROTOCOL_COUNT} />, l: "protocols indexed" },
+  { node: <CountUp value={1.8} decimals={1} suffix="s" />, l: "wallet scan time" },
+  { node: "1 sig", l: "to deploy" },
+  { node: "$0", l: "scan · no token" },
+];
+
+export function Hero() {
+  const reduce = useReducedMotion();
+  return (
+    <section className="relative overflow-hidden">
+      <ProtocolConstellation />
+
+      {/* Ambient aurora behind the headline */}
+      <motion.div
+        aria-hidden
+        className="absolute z-0 -top-24 -left-24 w-[680px] h-[680px] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(47,123,255,0.16), transparent 70%), radial-gradient(closest-side, rgba(244,181,63,0.10), transparent 75%)",
+          filter: "blur(40px)",
+        }}
+        animate={reduce ? undefined : { scale: [1, 1.12, 1], opacity: [0.55, 0.8, 0.55] }}
+        transition={
+          reduce ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }
+        }
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-5 lg:px-8 pt-16 lg:pt-24 pb-20 lg:pb-28">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left: editorial */}
-          <div className="lg:col-span-7">
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="lg:col-span-7"
+          >
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              variants={item}
               className="inline-flex items-center gap-2 px-2.5 py-1 border border-border rounded-full bg-surface/60 mb-7"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping" />
+                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-accent" />
+              </span>
               <span className="text-[11px] font-mono uppercase tracking-widest text-muted-strong">
                 Deploy capital · Arbitrum One
               </span>
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.05 }}
+              variants={item}
               className="text-[44px] sm:text-[56px] lg:text-[72px] leading-[1.02] tracking-[-0.04em] font-semibold"
             >
               Deploy idle capital into{" "}
@@ -37,9 +125,7 @@ export function Hero() {
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
+              variants={item}
               className="mt-7 text-base sm:text-lg text-muted-strong max-w-xl leading-relaxed"
             >
               ArbiFlow scans your Arbitrum wallet, ranks every yield opportunity
@@ -50,9 +136,7 @@ export function Hero() {
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25 }}
+              variants={item}
               className="mt-9 flex flex-wrap items-center gap-3"
             >
               <ConnectButton size="md">
@@ -73,20 +157,13 @@ export function Hero() {
 
             {/* Stat strip */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              variants={item}
               className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl"
             >
-              {[
-                { v: String(PROTOCOL_COUNT), l: "protocols indexed" },
-                { v: "1.8s", l: "wallet scan time" },
-                { v: "1 sig", l: "to deploy" },
-                { v: "$0", l: "scan · no token" },
-              ].map((s) => (
+              {stats.map((s) => (
                 <div key={s.l}>
                   <div className="text-2xl font-mono tabular font-semibold text-foreground">
-                    {s.v}
+                    {s.node}
                   </div>
                   <div className="text-[11px] font-mono uppercase tracking-widest text-muted mt-1">
                     {s.l}
@@ -94,7 +171,7 @@ export function Hero() {
                 </div>
               ))}
             </motion.div>
-          </div>
+          </motion.div>
 
           {/* Right: engine */}
           <div className="lg:col-span-5">
