@@ -7,7 +7,7 @@ const brands: Brand[] = [
   { name: "Arbitrum", src: "/icons/infra/arbitrum.svg" },
   { name: "DeFiLlama", src: "/icons/infra/defillama.png" },
   { name: "Reown", src: "/icons/infra/reown.svg" },
-  { name: "Relay", src: "/icons/infra/relay.svg" },
+  { name: "Relay", src: "/icons/infra/relay.png" },
   { name: "Enso", src: "/icons/infra/enso.svg" },
   { name: "Aave", src: "/icons/infra/aave.svg" },
 ];
