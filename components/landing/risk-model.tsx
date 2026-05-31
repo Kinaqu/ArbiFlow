@@ -39,8 +39,8 @@ const lanes = [
 
 export function RiskModel() {
   return (
-    <section id="risk" className="relative border-t border-border">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-32">
+    <section id="risk" className="relative">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-12 lg:py-16">
         <div className="grid lg:grid-cols-12 gap-12 mb-16">
           <div className="lg:col-span-5">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">

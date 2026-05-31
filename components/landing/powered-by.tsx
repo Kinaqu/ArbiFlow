@@ -18,8 +18,8 @@ const row = [...brands, ...brands];
 
 export function PoweredBy() {
   return (
-    <section className="border-t border-border">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 pt-20 lg:pt-24 text-center">
+    <section className="relative">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 pt-10 lg:pt-12 text-center">
         <div className="text-[11px] font-mono uppercase tracking-widest text-muted">
           Powered by · infrastructure we build on
         </div>

@@ -8,8 +8,8 @@ import { PROTOCOL_COUNT } from "@/lib/constants";
 
 export function CTA() {
   return (
-    <section id="cta" className="relative border-t border-border">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-36">
+    <section id="cta" className="relative">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-8 lg:py-10">
         <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-surface">
           {/* gradient backdrop */}
           <div

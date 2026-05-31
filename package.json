@@ -10,6 +10,7 @@
     "snapshot": "tsx scripts/generate-snapshot.ts"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.6.1",
     "@reown/appkit": "^1.8.20",
     "@reown/appkit-adapter-wagmi": "^1.8.20",
     "@tanstack/react-query": "^5.100.14",
@@ -21,6 +22,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0",
+    "three": "^0.184.0",
     "viem": "^2.51.0",
     "wagmi": "^3.6.15"
   },
@@ -29,6 +31,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.184.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "puppeteer": "^25.0.4",

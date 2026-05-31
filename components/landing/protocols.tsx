@@ -24,10 +24,10 @@ const groups = [
 
 export function Protocols() {
   return (
-    <section className="relative border-t border-border bg-surface/20">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-32">
+    <section className="relative">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-12 lg:py-16">
         <div className="grid lg:grid-cols-12 gap-12 items-start">
-          <div className="lg:col-span-4 lg:sticky lg:top-24">
+          <div className="lg:col-span-4">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
               [06] · Coverage
             </div>
