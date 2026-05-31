@@ -18,7 +18,7 @@ export function Security() {
   return (
     <section className="relative border-t border-border">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-32">
-        <div className="max-w-3xl mb-14">
+        <div className="max-w-2xl mb-12">
           <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
             [07] · Trust by design
           </div>
@@ -26,11 +26,10 @@ export function Security() {
             You sign.{" "}
             <span className="text-muted">We never custody.</span>
           </h2>
-          <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-            Scanning is free and signature-less. When you deploy, transactions
-            are built in the browser and signed by your wallet. Funds route
-            directly to the protocol — ArbiFlow never holds custody and cannot
-            move a cent without your signature.
+          <p className="mt-4 text-lg text-muted-strong leading-relaxed">
+            Scanning is free and signature-less. When you deploy, the
+            transaction is built in your browser, signed by your wallet, and
+            routed straight to the protocol — ArbiFlow never takes custody.
           </p>
         </div>
 

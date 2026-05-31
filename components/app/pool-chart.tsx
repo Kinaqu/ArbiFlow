@@ -1,7 +1,7 @@
 "use client";
 
-import { useId } from "react";
-import { motion } from "framer-motion";
+import { useId, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import { usePoolChart } from "@/hooks/use-pool-chart";
 import { fmtApy } from "@/lib/format";
 
@@ -11,18 +11,26 @@ const PAD = 3;
 
 export function PoolChart({ poolId }: { poolId: string }) {
   const gradId = useId();
-  const { data, isLoading, isError } = usePoolChart(poolId, true);
+  // Lazy-load the APY history: only fetch once this chart scrolls into view.
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "120px" });
+  const { data, isLoading, isError } = usePoolChart(poolId, inView);
   const points = data?.points ?? [];
 
-  if (isLoading) {
+  // The ref must stay mounted for the in-view observer to ever fire, so the
+  // outer wrapper is always rendered and the branches only swap its contents.
+  if (!inView || isLoading) {
     return (
-      <div className="h-14 flex items-center text-[10px] font-mono uppercase tracking-widest text-muted">
+      <div
+        ref={ref}
+        className="h-14 flex items-center text-[10px] font-mono uppercase tracking-widest text-muted"
+      >
         loading APY history…
       </div>
     );
   }
   // Degrade gracefully — no chart, no crash — when data is unavailable.
-  if (isError || points.length < 2) return null;
+  if (isError || points.length < 2) return <div ref={ref} />;
 
   const apys = points.map((p) => p.apy);
   const min = Math.min(...apys);
@@ -38,7 +46,7 @@ export function PoolChart({ poolId }: { poolId: string }) {
   const latest = points[points.length - 1].apy;
 
   return (
-    <div className="space-y-1.5">
+    <div ref={ref} className="space-y-1.5">
       <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted">
         <span>APY · last {points.length}d</span>
         <span className="text-foreground">{fmtApy(latest)} now</span>
