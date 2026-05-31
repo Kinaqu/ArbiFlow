@@ -9,6 +9,7 @@ const cards = [
     badge: "Best risk-adjusted",
     badgeTone: "gold",
     proto: "Aave v3",
+    icon: "/icons/protocols/aave-v3.png",
     asset: "USDC",
     score: 82,
     apy: "4.31",
@@ -24,6 +25,7 @@ const cards = [
     badge: "Highest yield · sustainable",
     badgeTone: "blue",
     proto: "Radiant Capital",
+    icon: "/icons/protocols/radiant-v2.png",
     asset: "USDC",
     score: 74,
     apy: "6.84",
@@ -39,6 +41,7 @@ const cards = [
     badge: "Aggressive · monitor weekly",
     badgeTone: "rose",
     proto: "GMX v2",
+    icon: "/icons/protocols/gmx-v2-perps.png",
     asset: "GLP basket",
     score: 58,
     apy: "14.22",
@@ -116,15 +119,34 @@ export function Opportunities() {
 
               {/* Header */}
               <div className="px-5 pt-4 pb-5 border-b hairline">
-                <div className="flex items-center gap-3 mb-1">
+                <div className="flex items-center gap-3.5">
                   <span
-                    className="w-2.5 h-2.5 rounded-sm"
-                    style={{ background: c.color }}
-                  />
-                  <div className="text-lg font-medium">{c.proto}</div>
-                </div>
-                <div className="font-mono text-sm text-muted">
-                  Asset · {c.asset}
+                    className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-surface-2 overflow-hidden shrink-0"
+                    style={{ boxShadow: `inset 0 0 0 1px ${c.color}40` }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={c.icon}
+                      alt={c.proto}
+                      width={30}
+                      height={30}
+                      className="w-[30px] h-[30px] object-contain"
+                    />
+                    <span
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: `radial-gradient(circle at 50% 0%, ${c.color}1f, transparent 70%)`,
+                      }}
+                    />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-lg font-medium leading-tight truncate">
+                      {c.proto}
+                    </div>
+                    <div className="font-mono text-sm text-muted mt-0.5">
+                      Asset · {c.asset}
+                    </div>
+                  </div>
                 </div>
               </div>
 
