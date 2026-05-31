@@ -11,6 +11,7 @@ import {
 import { ArrowRight, Lock } from "lucide-react";
 import { EngineVisual } from "./engine-visual";
 import { ProtocolConstellation } from "./protocol-constellation";
+import { RotatingProtocol } from "./rotating-protocol";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
@@ -119,9 +120,10 @@ export function Hero() {
               variants={item}
               className="text-[44px] sm:text-[56px] lg:text-[72px] leading-[1.02] tracking-[-0.04em] font-semibold"
             >
-              Deploy idle capital into{" "}
-              <span className="gradient-text-gold">optimized DeFi yield</span>
-              {" "}— in one click.
+              Deploy idle capital into the best DeFi yield on
+              <span className="block mt-2 sm:mt-3">
+                <RotatingProtocol />
+              </span>
             </motion.h1>
 
             <motion.p
