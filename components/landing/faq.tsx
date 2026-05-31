@@ -33,8 +33,8 @@ const faqs = [
 export function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section className="relative border-t border-border bg-surface/20">
-      <div className="mx-auto max-w-5xl px-5 lg:px-8 py-24 lg:py-32">
+    <section className="relative">
+      <div className="mx-auto max-w-5xl px-5 lg:px-8 py-12 lg:py-16">
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-4">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">

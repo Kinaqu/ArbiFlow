@@ -30,6 +30,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* The stacking scale/dim and particle field are JS-gated via useReducedMotion;
+   also drop smooth-scroll so reduced-motion users get instant anchor jumps. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 html, body {
   background: var(--color-background);
   color: var(--color-foreground);

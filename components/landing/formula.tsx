@@ -64,7 +64,7 @@ const terms = [
 export function Formula() {
   return (
     <section id="engine" className="relative">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-36">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-10 lg:py-12">
         <div className="max-w-3xl">
           <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
             [02] · The engine
@@ -81,7 +81,7 @@ export function Formula() {
         </div>
 
         {/* The formula */}
-        <div className="mt-14 lg:mt-20 relative">
+        <div className="mt-8 lg:mt-10 relative">
           <div className="absolute -inset-x-8 -inset-y-12 pointer-events-none">
             <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.04] via-transparent to-transparent rounded-3xl" />
           </div>
@@ -119,7 +119,7 @@ export function Formula() {
         </div>
 
         {/* Variable details */}
-        <div className="mt-16 lg:mt-20 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border border border-border rounded-xl overflow-hidden">
+        <div className="mt-8 lg:mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border border border-border rounded-xl overflow-hidden">
           {terms.map((t, i) => {
             const Icon = t.icon;
             return (

@@ -59,10 +59,10 @@ export function Opportunities() {
   return (
     <section
       id="opportunities"
-      className="relative border-t border-border bg-surface/20"
+      className="relative"
     >
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-32">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-6 lg:py-8">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-7">
           <div className="max-w-2xl">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
               [04] · Sample output
@@ -151,7 +151,7 @@ export function Opportunities() {
               </div>
 
               {/* APY breakdown */}
-              <div className="px-5 py-5 border-b hairline">
+              <div className="px-5 py-4 border-b hairline">
                 <div className="flex items-baseline justify-between mb-3">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
                     Net APY
@@ -188,7 +188,7 @@ export function Opportunities() {
               </div>
 
               {/* Risk bars */}
-              <div className="px-5 py-5 border-b hairline">
+              <div className="px-5 py-4 border-b hairline">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
                     Risk profile
@@ -234,7 +234,7 @@ export function Opportunities() {
               </div>
 
               {/* Score + why */}
-              <div className="px-5 py-5">
+              <div className="px-5 py-4">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="relative w-14 h-14 rounded-full bg-surface-2 border border-border-strong flex items-center justify-center flex-shrink-0">
                     <div className="text-lg font-mono font-semibold tabular">
@@ -265,7 +265,7 @@ export function Opportunities() {
           ))}
         </div>
 
-        <div className="mt-10 flex items-center justify-center gap-2 text-xs text-muted">
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Connect a wallet to see the full ranked list for your specific

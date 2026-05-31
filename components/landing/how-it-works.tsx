@@ -41,8 +41,8 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how" className="relative border-t border-border">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-24 lg:py-32">
+    <section id="how" className="relative">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-12 lg:py-16">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16">
           <div className="max-w-2xl">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
