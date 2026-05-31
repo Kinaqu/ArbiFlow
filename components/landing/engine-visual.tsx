@@ -21,9 +21,9 @@ const tokens = [
 ];
 
 const opps = [
-  { name: "Aave v3", asset: "USDC", apy: "4.31", risk: "Low", color: "#B6509E" },
-  { name: "Radiant", asset: "USDC", apy: "6.84", risk: "Med", color: "#7E62E5" },
-  { name: "GMX v2", asset: "GLP", apy: "14.22", risk: "High", color: "#03d1ce" },
+  { name: "Aave v3", asset: "USDC", apy: "4.31", risk: "Low", color: "#B6509E", icon: "/icons/protocols/aave-v3.png" },
+  { name: "Radiant", asset: "USDC", apy: "6.84", risk: "Med", color: "#7E62E5", icon: "/icons/protocols/radiant-v2.png" },
+  { name: "GMX v2", asset: "GLP", apy: "14.22", risk: "High", color: "#03d1ce", icon: "/icons/protocols/gmx-v2-perps.png" },
 ];
 
 export function EngineVisual() {
@@ -238,9 +238,18 @@ export function EngineVisual() {
           >
             <div className="flex items-center gap-3">
               <span
-                className="w-2 h-2 rounded-sm"
-                style={{ background: o.color }}
-              />
+                className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-surface-2 overflow-hidden shrink-0"
+                style={{ boxShadow: `inset 0 0 0 1px ${o.color}40` }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={o.icon}
+                  alt={o.name}
+                  width={18}
+                  height={18}
+                  className="w-[18px] h-[18px] object-contain"
+                />
+              </span>
               <div>
                 <div className="text-xs font-medium text-foreground">
                   {o.name}{" "}
