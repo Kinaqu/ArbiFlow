@@ -53,7 +53,7 @@ export function ProtocolConstellation() {
           alt=""
           width={s.size}
           height={s.size}
-          className="absolute object-contain select-none"
+          className="absolute object-contain select-none rounded-[22%]"
           style={{
             top: `${s.top}%`,
             left: `${s.left}%`,

@@ -57,7 +57,7 @@ export function RotatingProtocol() {
             <img
               src={`/icons/protocols/${p.slug}.png`}
               alt={p.name}
-              className="object-contain"
+              className="object-contain rounded-[22%]"
               style={{ width: "0.66em", height: "0.66em" }}
             />
           </span>

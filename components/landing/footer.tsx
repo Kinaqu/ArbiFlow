@@ -37,7 +37,7 @@ const cols: { title: string; items: Item[] }[] = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-surface/40">
+    <footer className="relative border-t border-border bg-surface/40">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-14">
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">

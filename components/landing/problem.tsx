@@ -1,7 +1,7 @@
 export function Problem() {
   return (
-    <section className="relative border-y border-border bg-surface/30">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-20 lg:py-28">
+    <section className="relative">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-12 lg:py-16">
         <div className="grid lg:grid-cols-12 gap-12 items-start">
           <div className="lg:col-span-5">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">

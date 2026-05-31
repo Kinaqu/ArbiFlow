@@ -247,7 +247,7 @@ export function EngineVisual() {
                   alt={o.name}
                   width={18}
                   height={18}
-                  className="w-[18px] h-[18px] object-contain"
+                  className="w-[18px] h-[18px] object-contain rounded-[22%]"
                 />
               </span>
               <div>
