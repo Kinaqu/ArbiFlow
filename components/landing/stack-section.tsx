@@ -100,7 +100,11 @@ export function StackCard({
 
   return (
     <div
-      className="relative px-4 pb-5 sm:px-6 md:sticky md:top-[var(--stack-top)] md:pb-0"
+      className={`relative px-4 pb-5 sm:px-6 md:pb-0${
+        // The last card never gets covered, so it must not stay pinned — a sticky
+        // last card with its raised z-index paints over the footer below the Stack.
+        isLast ? "" : " md:sticky md:top-[var(--stack-top)]"
+      }`}
       style={
         {
           "--stack-top": `calc(5.5rem + ${index * 0.25}rem)`,
@@ -110,7 +114,7 @@ export function StackCard({
     >
       <motion.div
         style={{ scale, opacity }}
-        className="origin-top mx-auto flex w-full max-w-6xl items-center overflow-hidden rounded-[2rem] border border-border bg-surface/80 shadow-[0_40px_120px_-40px_rgba(0,0,0,0.85)] backdrop-blur-xl md:min-h-[calc(100vh-8rem)]"
+        className="origin-top mx-auto flex w-full max-w-6xl items-center overflow-hidden rounded-[2rem] border border-border bg-surface/90 shadow-[0_30px_80px_-45px_rgba(0,0,0,0.85)] backdrop-blur-md md:min-h-[calc(100vh-8rem)]"
       >
         <div className="w-full">{children}</div>
       </motion.div>
