@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 import { ConnectButton } from "@/components/wallet/connect-button";
+import { ShapeBlurLayer } from "./shape-blur-layer";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
 export function CTA() {
@@ -20,6 +21,8 @@ export function CTA() {
                 "radial-gradient(ellipse 600px 400px at 80% 0%, rgba(47, 123, 255, 0.18), transparent 60%), radial-gradient(ellipse 600px 400px at 0% 100%, rgba(244, 181, 63, 0.10), transparent 60%)",
             }}
           />
+          {/* interactive shape-blur frame (md+ only, paused off-screen) */}
+          <ShapeBlurLayer className="absolute inset-0 z-0 pointer-events-none opacity-70" />
           {/* corner ticks */}
           <div className="absolute inset-0 pointer-events-none">
             {["top-4 left-4", "top-4 right-4", "bottom-4 left-4", "bottom-4 right-4"].map(
@@ -32,7 +35,7 @@ export function CTA() {
             )}
           </div>
 
-          <div className="relative grid lg:grid-cols-12 gap-10 p-10 lg:p-16">
+          <div className="relative z-10 grid lg:grid-cols-12 gap-10 p-10 lg:p-16">
             <div className="lg:col-span-7">
               <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-5">
                 [→] · Scan &amp; deploy
@@ -42,29 +45,28 @@ export function CTA() {
                 <span className="gradient-text-gold">one signature.</span>
               </h2>
               <p className="mt-6 text-lg text-muted-strong max-w-xl leading-relaxed">
-                Connect your wallet. Free scan in under two seconds. Deploy the
-                top‑scoring strategy with a single tap — your wallet, your
-                signature, your funds.
+                Free scan in under two seconds. Deploy the top‑scoring strategy
+                in one signature.
               </p>
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
-                <ConnectButton size="lg">
+                <ConnectButton size="lg" className="font-semibold">
                   <Zap className="w-4 h-4" />
-                  Connect &amp; scan free
+                  Connect &amp; scan
                   <ArrowRight className="w-4 h-4" />
                 </ConnectButton>
                 <Link
                   href="/app?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
                   className="btn-ghost inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-foreground"
                 >
-                  Try with sample wallet
+                  Sample wallet
+                  <ArrowRight className="w-4 h-4 opacity-50" />
                 </Link>
               </div>
 
               <div className="mt-7 flex flex-wrap gap-6 text-xs text-muted">
                 <span>✓ Free scan · no signature</span>
-                <span>✓ You sign every deploy</span>
-                <span>✓ No token · no custody</span>
+                <span>✓ You sign · no custody</span>
               </div>
             </div>
 
