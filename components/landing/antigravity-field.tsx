@@ -25,9 +25,20 @@ export function AntigravityField() {
     if (reduced) return;
     const mq = window.matchMedia("(min-width: 768px)");
     const sync = () => setEnabled(mq.matches);
-    sync();
+
+    // Defer the first mount to idle so the three.js chunk parse + WebGL init
+    // don't compete with hero hydration / first paint (kills first-load jank).
+    const hasRIC = typeof window.requestIdleCallback === "function";
+    const handle: number = hasRIC
+      ? window.requestIdleCallback(sync, { timeout: 800 })
+      : window.setTimeout(sync, 300);
+
     mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    return () => {
+      if (hasRIC) window.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
+      mq.removeEventListener("change", sync);
+    };
   }, [reduced]);
 
   if (reduced || !enabled) return null;
@@ -38,7 +49,7 @@ export function AntigravityField() {
       className="fixed inset-0 z-0 pointer-events-none"
       style={{ opacity }}
     >
-      <Antigravity color="#2F7BFF" autoAnimate count={180} />
+      <Antigravity color="#2F7BFF" autoAnimate count={120} />
     </motion.div>
   );
 }
