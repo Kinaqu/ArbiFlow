@@ -3,11 +3,14 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-// Ported from React Bits (ShapeBlur, JS variant) to typed TSX. Perf changes vs.
-// the source: rAF runs only while the mount is on-screen (IntersectionObserver),
-// skips work when the tab is hidden, DPR is capped at 1.5, and only a single
-// pointermove listener is used. This is a second always-on WebGL loop, so the
-// gating matters — see shape-blur-layer.tsx for the md+/reduced-motion guard.
+// Adapted from React Bits' ShapeBlur (three.js) to typed TSX. The stock shader
+// draws a square-ish rounded shape that can't sit on a non-square element's
+// edges, so the border is rewritten as an *aspect-correct* rounded box whose
+// outline lands exactly on the host rectangle's edges (matching its corner
+// radius) and is revealed softly only near the cursor — i.e. the host element
+// itself appears to glow on hover. Perf guards vs. the source: rAF runs only
+// while on-screen (IntersectionObserver), skips when the tab is hidden, DPR is
+// capped at 1.5, single pointermove listener, and WebGL creation is guarded.
 
 type ShapeBlurProps = {
   className?: string;
@@ -35,112 +38,37 @@ uniform vec2 u_mouse;
 uniform vec2 u_resolution;
 uniform float u_pixelRatio;
 
-uniform float u_shapeSize;
-uniform float u_roundness;
-uniform float u_borderSize;
-uniform float u_circleSize;
-uniform float u_circleEdge;
+uniform float u_shapeSize;   // 1.0 = frame sits on the very edge
+uniform float u_roundness;   // corner radius, in units of element height
+uniform float u_borderSize;  // half border thickness, in units of element height
+uniform float u_circleSize;  // cursor reveal radius
+uniform float u_circleEdge;  // cursor reveal softness
 
-#ifndef PI
-#define PI 3.1415926535897932384626433832795
-#endif
-#ifndef TWO_PI
-#define TWO_PI 6.2831853071795864769252867665590
-#endif
-
-#ifndef VAR
-#define VAR 0
-#endif
-
-#ifndef FNC_COORD
-#define FNC_COORD
-vec2 coord(in vec2 p) {
-    p = p / u_resolution.xy;
-    if (u_resolution.x > u_resolution.y) {
-        p.x *= u_resolution.x / u_resolution.y;
-        p.x += (u_resolution.y - u_resolution.x) / u_resolution.y / 2.0;
-    } else {
-        p.y *= u_resolution.y / u_resolution.x;
-        p.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
-    }
-    p -= 0.5;
-    p *= vec2(-1.0, 1.0);
-    return p;
-}
-#endif
-
-#define st0 coord(gl_FragCoord.xy)
-#define mx coord(u_mouse * u_pixelRatio)
-
-float sdRoundRect(vec2 p, vec2 b, float r) {
-    vec2 d = abs(p - 0.5) * 4.2 - b + vec2(r);
-    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
-}
-float sdCircle(in vec2 st, in vec2 center) {
-    return length(st - center) * 2.0;
-}
-float sdPoly(in vec2 p, in float w, in int sides) {
-    float a = atan(p.x, p.y) + PI;
-    float r = TWO_PI / float(sides);
-    float d = cos(floor(0.5 + a / r) * r - a) * length(max(abs(p) * 1.0, 0.0));
-    return d * 2.0 - w;
-}
-
-float aastep(float threshold, float value) {
-    float afwidth = length(vec2(dFdx(value), dFdy(value))) * 0.70710678118654757;
-    return smoothstep(threshold - afwidth, threshold + afwidth, value);
-}
-float fill(in float x) { return 1.0 - aastep(0.0, x); }
-float fill(float x, float size, float edge) {
-    return 1.0 - smoothstep(size - edge, size + edge, x);
-}
-float stroke(in float d, in float t) { return (1.0 - aastep(t, abs(d))); }
-float stroke(float x, float size, float w, float edge) {
-    float d = smoothstep(size - edge, size + edge, x + w * 0.5) - smoothstep(size - edge, size + edge, x - w * 0.5);
-    return clamp(d, 0.0, 1.0);
-}
-
-float strokeAA(float x, float size, float w, float edge) {
-    float afwidth = length(vec2(dFdx(x), dFdy(x))) * 0.70710678;
-    float d = smoothstep(size - edge - afwidth, size + edge + afwidth, x + w * 0.5)
-            - smoothstep(size - edge - afwidth, size + edge + afwidth, x - w * 0.5);
-    return clamp(d, 0.0, 1.0);
+float sdRoundBox(in vec2 p, in vec2 b, in float r) {
+    vec2 q = abs(p) - b + r;
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
 }
 
 void main() {
-    vec2 st = st0 + 0.5;
-    vec2 posMouse = mx * vec2(1., -1.) + 0.5;
+    vec2 res = u_resolution;
+    float ar = res.x / res.y;
 
-    float size = u_shapeSize;
-    float roundness = u_roundness;
-    float borderSize = u_borderSize;
-    float circleSize = u_circleSize;
-    float circleEdge = u_circleEdge;
+    // aspect-corrected space: 1 unit = element height in px, origin at centre
+    vec2 p  = (v_texcoord - 0.5) * vec2(ar, 1.0);
+    vec2 muv = (u_mouse * u_pixelRatio) / res;
+    muv.y = 1.0 - muv.y;              // mouse Y is top-down; uv Y is bottom-up
+    vec2 mo = (muv - 0.5) * vec2(ar, 1.0);
 
-    float sdfCircle = fill(
-        sdCircle(st, posMouse),
-        circleSize,
-        circleEdge
-    );
+    vec2 halfExt = vec2(ar, 1.0) * 0.5;            // half-extents to the edges
+    vec2 b = halfExt * u_shapeSize - u_borderSize; // outline lands on the edge
+    float d = sdRoundBox(p, b, u_roundness);
 
-    float sdf;
-    if (VAR == 0) {
-        sdf = sdRoundRect(st, vec2(size), roundness);
-        sdf = strokeAA(sdf, 0.0, borderSize, sdfCircle) * 4.0;
-    } else if (VAR == 1) {
-        sdf = sdCircle(st, vec2(0.5));
-        sdf = fill(sdf, 0.6, sdfCircle) * 1.2;
-    } else if (VAR == 2) {
-        sdf = sdCircle(st, vec2(0.5));
-        sdf = strokeAA(sdf, 0.58, 0.02, sdfCircle) * 4.0;
-    } else if (VAR == 3) {
-        sdf = sdPoly(st - vec2(0.5, 0.45), 0.3, 3);
-        sdf = fill(sdf, 0.05, sdfCircle) * 1.4;
-    }
+    float aa = fwidth(d) + 0.0008;
+    float border = 1.0 - smoothstep(u_borderSize, u_borderSize + aa, abs(d));
 
-    vec3 color = vec3(1.0);
-    float alpha = sdf;
-    gl_FragColor = vec4(color.rgb, alpha);
+    float reveal = 1.0 - smoothstep(u_circleSize, u_circleSize + u_circleEdge, length(p - mo));
+
+    gl_FragColor = vec4(vec3(1.0), border * reveal);
 }
 `;
 
@@ -148,11 +76,11 @@ export default function ShapeBlur({
   className = "",
   variation = 0,
   pixelRatioProp = 2,
-  shapeSize = 1.2,
-  roundness = 0.4,
-  borderSize = 0.05,
-  circleSize = 0.3,
-  circleEdge = 0.5,
+  shapeSize = 1.0,
+  roundness = 0.05,
+  borderSize = 0.012,
+  circleSize = 0.4,
+  circleEdge = 0.4,
 }: ShapeBlurProps) {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -267,7 +195,7 @@ export default function ShapeBlur({
       cancelAnimationFrame(rafId);
     };
 
-    // Only burn frames while the CTA is actually on-screen.
+    // Only burn frames while the host element is actually on-screen.
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) start();

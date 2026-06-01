@@ -135,10 +135,10 @@ export function CTA() {
                 {/* shape-blur frame hugging the terminal edges (md+, hover-reveal) */}
                 <ShapeBlurLayer
                   className="absolute inset-0 z-20 overflow-hidden rounded-xl pointer-events-none"
-                  shapeSize={1.5}
-                  roundness={0.3}
+                  shapeSize={1}
+                  roundness={0.05}
                   circleSize={0.5}
-                  circleEdge={1}
+                  circleEdge={0.45}
                 />
               </motion.div>
             </div>

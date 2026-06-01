@@ -26,11 +26,11 @@ type ShapeBlurLayerProps = {
 export function ShapeBlurLayer({
   className = "",
   variation = 0,
-  shapeSize = 1.1,
-  roundness = 0.5,
-  borderSize = 0.05,
+  shapeSize = 1,
+  roundness = 0.05,
+  borderSize = 0.012,
   circleSize = 0.4,
-  circleEdge = 0.8,
+  circleEdge = 0.4,
 }: ShapeBlurLayerProps) {
   const reduced = useReducedMotion();
   const [enabled, setEnabled] = useState(false);
