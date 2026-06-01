@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useDisconnect } from "wagmi";
 import { formatAddress } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type Variant = "primary" | "ghost";
 type Size = "sm" | "md" | "lg";
@@ -52,7 +53,12 @@ export function ConnectButton({
       <button
         type="button"
         onClick={() => disconnect()}
-        className={`${baseBtn} ${sizeClasses[size]} font-mono tabular rounded-md inline-flex items-center font-medium ${className}`}
+        className={cn(
+          baseBtn,
+          sizeClasses[size],
+          "font-mono tabular rounded-md inline-flex items-center font-medium",
+          className,
+        )}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse" />
         {formatAddress(address)}
@@ -64,7 +70,12 @@ export function ConnectButton({
     <button
       type="button"
       onClick={() => open()}
-      className={`${baseBtn} ${sizeClasses[size]} rounded-md inline-flex items-center font-medium ${className}`}
+      className={cn(
+        baseBtn,
+        sizeClasses[size],
+        "rounded-md inline-flex items-center font-medium",
+        className,
+      )}
     >
       {children ?? "Connect wallet"}
     </button>
