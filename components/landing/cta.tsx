@@ -21,8 +21,6 @@ export function CTA() {
                 "radial-gradient(ellipse 600px 400px at 80% 0%, rgba(47, 123, 255, 0.18), transparent 60%), radial-gradient(ellipse 600px 400px at 0% 100%, rgba(244, 181, 63, 0.10), transparent 60%)",
             }}
           />
-          {/* interactive shape-blur frame (md+ only, paused off-screen) */}
-          <ShapeBlurLayer className="absolute inset-0 z-0 pointer-events-none opacity-70" />
           {/* corner ticks */}
           <div className="absolute inset-0 pointer-events-none">
             {["top-4 left-4", "top-4 right-4", "bottom-4 left-4", "bottom-4 right-4"].map(
@@ -133,6 +131,15 @@ export function CTA() {
                     </div>
                   </div>
                 </div>
+
+                {/* shape-blur frame hugging the terminal edges (md+, hover-reveal) */}
+                <ShapeBlurLayer
+                  className="absolute inset-0 z-20 overflow-hidden rounded-xl pointer-events-none"
+                  shapeSize={1.5}
+                  roundness={0.3}
+                  circleSize={0.5}
+                  circleEdge={1}
+                />
               </motion.div>
             </div>
           </div>

@@ -13,7 +13,25 @@ const ShapeBlur = dynamic(() => import("./shape-blur"), { ssr: false });
  * mount is deferred to idle so the three.js init doesn't fight first paint.
  * ShapeBlur itself self-pauses its rAF whenever it scrolls out of view.
  */
-export function ShapeBlurLayer({ className = "" }: { className?: string }) {
+type ShapeBlurLayerProps = {
+  className?: string;
+  variation?: number;
+  shapeSize?: number;
+  roundness?: number;
+  borderSize?: number;
+  circleSize?: number;
+  circleEdge?: number;
+};
+
+export function ShapeBlurLayer({
+  className = "",
+  variation = 0,
+  shapeSize = 1.1,
+  roundness = 0.5,
+  borderSize = 0.05,
+  circleSize = 0.4,
+  circleEdge = 0.8,
+}: ShapeBlurLayerProps) {
   const reduced = useReducedMotion();
   const [enabled, setEnabled] = useState(false);
 
@@ -40,12 +58,12 @@ export function ShapeBlurLayer({ className = "" }: { className?: string }) {
   return (
     <div className={className} aria-hidden>
       <ShapeBlur
-        variation={0}
-        shapeSize={1.1}
-        roundness={0.5}
-        borderSize={0.05}
-        circleSize={0.4}
-        circleEdge={0.8}
+        variation={variation}
+        shapeSize={shapeSize}
+        roundness={roundness}
+        borderSize={borderSize}
+        circleSize={circleSize}
+        circleEdge={circleEdge}
       />
     </div>
   );
