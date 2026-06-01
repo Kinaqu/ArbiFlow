@@ -81,40 +81,35 @@ export function Formula() {
         </div>
 
         {/* The formula */}
-        <div className="mt-8 lg:mt-10 relative">
-          <div className="absolute -inset-x-8 -inset-y-12 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.04] via-transparent to-transparent rounded-3xl" />
-          </div>
-          <div className="relative">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2 lg:gap-x-4 text-2xl sm:text-3xl lg:text-[40px] tracking-tight font-mono font-light leading-[1.2]">
-              <span className="text-muted">Score</span>
-              <span className="text-border-strong">=</span>
-              {terms.map((t, i) => (
-                <div
-                  key={t.label}
-                  className="flex items-baseline gap-3 lg:gap-4"
-                >
-                  {i > 0 && (
-                    <span
-                      className={
-                        t.sign === "+" ? "text-mint" : "text-rose"
-                      }
-                    >
-                      {t.sign}
-                    </span>
-                  )}
-                  <motion.span
-                    initial={{ opacity: 0, y: 8 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ delay: i * 0.06 }}
-                    className="text-foreground whitespace-nowrap"
+        <div className="mt-8 lg:mt-10">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2 lg:gap-x-4 text-2xl sm:text-3xl lg:text-[40px] tracking-tight font-mono font-light leading-[1.2]">
+            <span className="text-muted">Score</span>
+            <span className="text-border-strong">=</span>
+            {terms.map((t, i) => (
+              <div
+                key={t.label}
+                className="flex items-baseline gap-3 lg:gap-4"
+              >
+                {i > 0 && (
+                  <span
+                    className={
+                      t.sign === "+" ? "text-mint" : "text-rose"
+                    }
                   >
-                    {t.label}
-                  </motion.span>
-                </div>
-              ))}
-            </div>
+                    {t.sign}
+                  </span>
+                )}
+                <motion.span
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ delay: i * 0.06 }}
+                  className="text-foreground whitespace-nowrap"
+                >
+                  {t.label}
+                </motion.span>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -52,10 +52,10 @@ export function RiskModel() {
           </div>
           <div className="lg:col-span-7 lg:pl-12 lg:border-l hairline">
             <p className="text-lg text-muted-strong leading-relaxed">
-              Every score subtracts a transparent, weighted blend of four risk
-              dimensions from raw return. Same formula across protocols. No
-              hand-tuning per partner. If you disagree with a weight, the
-              breakdown is right there to argue against.
+              Every score subtracts a weighted blend of four risk dimensions
+              from raw return — the same formula across every protocol.
+              Disagree with a weight? The breakdown is right there to argue
+              against.
             </p>
           </div>
         </div>

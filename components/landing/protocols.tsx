@@ -6,19 +6,39 @@ import { PROTOCOL_COUNT } from "@/lib/constants";
 const groups = [
   {
     cat: "Lending",
-    items: ["Aave v3", "Radiant", "Compound v3", "Silo", "Dolomite"],
+    items: [
+      { name: "Aave v3", slug: "aave-v3" },
+      { name: "Radiant", slug: "radiant-v2" },
+      { name: "Compound v3", slug: "compound-v3" },
+      { name: "Silo", slug: "silo-v2" },
+      { name: "Dolomite", slug: "dolomite" },
+    ],
   },
   {
     cat: "Liquidity",
-    items: ["Uniswap v3", "Camelot v3", "Trader Joe", "Balancer", "Curve"],
+    items: [
+      { name: "Uniswap v3", slug: "uniswap-v3" },
+      { name: "Camelot v3", slug: "camelot-v3" },
+      { name: "Balancer", slug: "balancer-v2" },
+      { name: "Curve", slug: "curve-dex" },
+      { name: "Gamma", slug: "gamma" },
+    ],
   },
   {
     cat: "Perps · real yield",
-    items: ["GMX v2", "Vertex", "Gains", "MUX", "Hyperliquid"],
+    items: [
+      { name: "GMX v2", slug: "gmx-v2-perps" },
+      { name: "Gains", slug: "gains-network" },
+    ],
   },
   {
     cat: "Yield · LSTs",
-    items: ["Pendle", "Stargate", "Yearn", "wstETH", "rETH"],
+    items: [
+      { name: "Pendle", slug: "pendle" },
+      { name: "Lido", slug: "lido" },
+      { name: "ether.fi", slug: "ether-fi" },
+      { name: "Beefy", slug: "beefy" },
+    ],
   },
 ];
 
@@ -69,10 +89,18 @@ export function Protocols() {
                 <div className="flex flex-wrap gap-2 flex-1">
                   {g.items.map((p) => (
                     <span
-                      key={p}
-                      className="px-3 py-1.5 text-sm bg-surface-2 border border-border rounded-md hover:border-border-strong hover:text-foreground transition-colors text-muted-strong"
+                      key={p.name}
+                      className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 text-sm bg-surface-2 border border-border rounded-md hover:border-border-strong hover:text-foreground transition-colors text-muted-strong"
                     >
-                      {p}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/icons/protocols/${p.slug}.png`}
+                        alt=""
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 object-contain rounded-[22%] shrink-0"
+                      />
+                      {p.name}
                     </span>
                   ))}
                   <span className="px-3 py-1.5 text-sm border border-dashed border-border rounded-md text-muted">
