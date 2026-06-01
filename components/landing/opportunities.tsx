@@ -71,8 +71,7 @@ export function Opportunities() {
               What a real scan returns.
             </h2>
             <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-              Three of the top strategies ArbiFlow surfaced this week for a
-              wallet holding $2,340 in idle USDC and ARB.
+              Top picks for a wallet holding $2,340 in idle USDC and ARB.
             </p>
           </div>
           <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-muted">
@@ -130,7 +129,7 @@ export function Opportunities() {
                       alt={c.proto}
                       width={30}
                       height={30}
-                      className="w-[30px] h-[30px] object-contain"
+                      className="w-[30px] h-[30px] object-contain rounded-[22%]"
                     />
                     <span
                       className="absolute inset-0 pointer-events-none"
@@ -268,8 +267,7 @@ export function Opportunities() {
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Connect a wallet to see the full ranked list for your specific
-            balances.
+            Connect a wallet to see the full ranked list.
           </span>
         </div>
       </div>
