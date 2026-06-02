@@ -111,8 +111,16 @@ export function Hero() {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping" />
                 <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-accent" />
               </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/icons/infra/arbitrum.svg"
+                alt=""
+                width={14}
+                height={14}
+                className="w-3.5 h-3.5"
+              />
               <span className="text-[11px] font-mono uppercase tracking-widest text-muted-strong">
-                Deploy capital · Arbitrum One
+                Arbitrum One
               </span>
             </motion.div>
 
@@ -131,10 +139,9 @@ export function Hero() {
               className="mt-7 text-base sm:text-lg text-muted-strong max-w-xl leading-relaxed"
             >
               ArbiFlow scans your Arbitrum wallet, ranks every yield opportunity
-              by{" "}
-              <span className="text-foreground">risk‑adjusted, gas‑aware net APY</span>
-              , and lets you deploy into the top‑scoring strategy without leaving
-              the page.
+              by a{" "}
+              <span className="text-foreground">risk‑adjusted composite score</span>
+              , and lets you deploy into the top match in a single signature.
             </motion.p>
 
             <motion.div
@@ -157,13 +164,16 @@ export function Hero() {
               </div>
             </motion.div>
 
-            {/* Stat strip */}
+            {/* Stat strip — anchored under the copy as a spec line */}
             <motion.div
               variants={item}
-              className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl"
+              className="mt-12 pt-6 border-t hairline grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-xl"
             >
-              {stats.map((s) => (
-                <div key={s.l}>
+              {stats.map((s, i) => (
+                <div
+                  key={s.l}
+                  className={i > 0 ? "sm:pl-6 sm:border-l sm:border-border/70" : ""}
+                >
                   <div className="text-2xl font-mono tabular font-semibold text-foreground">
                     {s.node}
                   </div>
