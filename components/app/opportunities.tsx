@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   ExternalLink,
+  Info,
   Loader2,
   Search,
   Shield,
@@ -666,10 +667,13 @@ function ScoreCell({ pool }: { pool: ScoredPool }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="font-mono tabular text-sm text-muted-strong underline decoration-dotted decoration-border underline-offset-4 hover:text-foreground focus:outline-none focus-visible:text-foreground"
-        aria-label={`Score ${pool.score.toFixed(1)} of 100 — show breakdown`}
+        className="inline-flex items-center gap-1 font-mono tabular text-sm text-muted-strong hover:text-foreground focus:outline-none focus-visible:text-foreground"
+        aria-label={`Score ${pool.score.toFixed(1)} of 100 — show scoring breakdown`}
       >
-        {pool.score.toFixed(1)}
+        <span className="underline decoration-dotted decoration-border underline-offset-4">
+          {pool.score.toFixed(1)}
+        </span>
+        <Info className="w-3 h-3 text-muted" aria-hidden />
       </button>
       {open ? (
         <div className="absolute right-0 top-full mt-2 z-20 w-64 rounded-lg border border-border bg-surface shadow-xl p-3 space-y-2 text-left">
