@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { ShapeBlurLayer } from "./shape-blur-layer";
@@ -49,7 +49,6 @@ export function CTA() {
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <ConnectButton size="lg" className="font-semibold">
-                  <Zap className="w-4 h-4" />
                   Connect &amp; scan
                   <ArrowRight className="w-4 h-4" />
                 </ConnectButton>
@@ -58,13 +57,8 @@ export function CTA() {
                   className="btn-ghost inline-flex items-center gap-2 px-6 py-3.5 rounded-md text-base font-medium text-foreground"
                 >
                   Sample wallet
-                  <ArrowRight className="w-4 h-4 opacity-50" />
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
-              </div>
-
-              <div className="mt-7 flex flex-wrap gap-6 text-xs text-muted">
-                <span>✓ Free scan · no signature</span>
-                <span>✓ You sign · no custody</span>
               </div>
             </div>
 
@@ -137,8 +131,11 @@ export function CTA() {
                   className="absolute inset-0 z-20 overflow-hidden rounded-xl pointer-events-none"
                   shapeSize={1}
                   roundness={0.05}
+                  borderSize={0.008}
                   circleSize={0.5}
                   circleEdge={0.45}
+                  color="#F4B53F"
+                  opacity={0.6}
                 />
               </motion.div>
             </div>

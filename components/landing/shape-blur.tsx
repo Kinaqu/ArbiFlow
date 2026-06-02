@@ -21,6 +21,8 @@ type ShapeBlurProps = {
   borderSize?: number;
   circleSize?: number;
   circleEdge?: number;
+  color?: string;
+  opacity?: number;
 };
 
 const vertexShader = /* glsl */ `
@@ -43,6 +45,8 @@ uniform float u_roundness;   // corner radius, in units of element height
 uniform float u_borderSize;  // half border thickness, in units of element height
 uniform float u_circleSize;  // cursor reveal radius
 uniform float u_circleEdge;  // cursor reveal softness
+uniform vec3  u_color;       // frame tint
+uniform float u_opacity;     // overall frame opacity
 
 float sdRoundBox(in vec2 p, in vec2 b, in float r) {
     vec2 q = abs(p) - b + r;
@@ -68,7 +72,7 @@ void main() {
 
     float reveal = 1.0 - smoothstep(u_circleSize, u_circleSize + u_circleEdge, length(p - mo));
 
-    gl_FragColor = vec4(vec3(1.0), border * reveal);
+    gl_FragColor = vec4(u_color, border * reveal * u_opacity);
 }
 `;
 
@@ -81,6 +85,8 @@ export default function ShapeBlur({
   borderSize = 0.012,
   circleSize = 0.4,
   circleEdge = 0.4,
+  color = "#ffffff",
+  opacity = 1,
 }: ShapeBlurProps) {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +134,8 @@ export default function ShapeBlur({
         u_borderSize: { value: borderSize },
         u_circleSize: { value: circleSize },
         u_circleEdge: { value: circleEdge },
+        u_color: { value: new THREE.Color(color) },
+        u_opacity: { value: opacity },
       },
       defines: { VAR: variation },
       transparent: true,
@@ -228,6 +236,8 @@ export default function ShapeBlur({
     borderSize,
     circleSize,
     circleEdge,
+    color,
+    opacity,
   ]);
 
   return (

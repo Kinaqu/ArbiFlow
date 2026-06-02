@@ -21,6 +21,8 @@ type ShapeBlurLayerProps = {
   borderSize?: number;
   circleSize?: number;
   circleEdge?: number;
+  color?: string;
+  opacity?: number;
 };
 
 export function ShapeBlurLayer({
@@ -31,6 +33,8 @@ export function ShapeBlurLayer({
   borderSize = 0.012,
   circleSize = 0.4,
   circleEdge = 0.4,
+  color = "#ffffff",
+  opacity = 1,
 }: ShapeBlurLayerProps) {
   const reduced = useReducedMotion();
   const [enabled, setEnabled] = useState(false);
@@ -64,6 +68,8 @@ export function ShapeBlurLayer({
         borderSize={borderSize}
         circleSize={circleSize}
         circleEdge={circleEdge}
+        color={color}
+        opacity={opacity}
       />
     </div>
   );
