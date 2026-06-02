@@ -175,6 +175,36 @@ export const ARBITRUM_TOKENS: Token[] = [
 export const tokenBySymbol = (sym: string) =>
   ARBITRUM_TOKENS.find((t) => t.symbol === sym);
 
+// Real currency logomarks keyed by uppercase symbol. Stable/wrapped synonyms
+// share a mark (USDC.e → USDC, WETH → ETH); protocol-token marks reuse the
+// protocol icon. Symbols absent here fall back to the brand color swatch.
+export const TOKEN_LOGO: Record<string, string> = {
+  ETH: "/icons/tokens/eth.svg",
+  WETH: "/icons/tokens/eth.svg",
+  ARB: "/icons/infra/arbitrum.svg",
+  USDC: "/icons/tokens/usdc.svg",
+  "USDC.E": "/icons/tokens/usdc.svg",
+  USDBC: "/icons/tokens/usdc.svg",
+  USDT: "/icons/tokens/usdt.png",
+  DAI: "/icons/tokens/dai.png",
+  WBTC: "/icons/tokens/wbtc.png",
+  FRAX: "/icons/tokens/frax.png",
+  LUSD: "/icons/tokens/lusd.png",
+  LINK: "/icons/tokens/link.png",
+  MAGIC: "/icons/tokens/magic.png",
+  JOE: "/icons/tokens/joe.png",
+  GMX: "/icons/protocols/gmx-v2-perps.png",
+  RDNT: "/icons/protocols/radiant-v2.png",
+  PENDLE: "/icons/protocols/pendle.png",
+  CRV: "/icons/protocols/curve-dex.png",
+  UNI: "/icons/protocols/uniswap-v3.png",
+  GRAIL: "/icons/protocols/camelot-v3.png",
+  GNS: "/icons/protocols/gains-network.png",
+};
+
+export const tokenLogo = (symbol: string): string | null =>
+  TOKEN_LOGO[symbol.toUpperCase()] ?? null;
+
 // --- Multichain source set ----------------------------------------------------
 // Arbitrum stays the home chain for yield. Base + Optimism are scanned only for a
 // curated bridgeable set (stables + WETH + native ETH) — no need to sweep 20
