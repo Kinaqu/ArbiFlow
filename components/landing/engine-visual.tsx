@@ -1,29 +1,33 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Wallet, Cpu, ArrowUpRight, ArrowRight, Check } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
-const stages = [
-  { label: "balances loaded", delay: 0.6 },
-  { label: "idle capital detected", delay: 0.85 },
-  { label: `${PROTOCOL_COUNT} protocols evaluated`, delay: 1.1 },
-  { label: "scoring complete", delay: 1.35 },
-];
-
 const tokens = [
-  { sym: "USDC", bal: "1,840.22", idle: true, color: "#2775CA" },
-  { sym: "ETH", bal: "0.412", idle: false, color: "#627EEA" },
-  { sym: "ARB", bal: "682.50", idle: true, color: "#28A0F0" },
+  { sym: "USDC", bal: "1,840.22", idle: true, logo: "/icons/tokens/usdc.svg" },
+  { sym: "ETH", bal: "0.412", idle: false, logo: "/icons/tokens/eth.svg" },
+  { sym: "ARB", bal: "682.50", idle: true, logo: "/icons/infra/arbitrum.svg" },
 ];
 
 const opps = [
-  { name: "Aave v3", asset: "USDC", apy: "4.31", risk: "Low", color: "#B6509E", icon: "/icons/protocols/aave-v3.png" },
-  { name: "Radiant", asset: "USDC", apy: "6.84", risk: "Med", color: "#7E62E5", icon: "/icons/protocols/radiant-v2.png" },
-  { name: "GMX v2", asset: "GLP", apy: "14.22", risk: "High", color: "#03d1ce", icon: "/icons/protocols/gmx-v2-perps.png" },
+  { name: "Aave v3", asset: "USDC", apy: "4.31", score: 78, color: "#B6509E", icon: "/icons/protocols/aave-v3.png" },
+  { name: "Radiant", asset: "USDC", apy: "6.84", score: 71, color: "#7E62E5", icon: "/icons/protocols/radiant-v2.png" },
+  { name: "GMX v2", asset: "GLP", apy: "14.22", score: 64, color: "#03d1ce", icon: "/icons/protocols/gmx-v2-perps.png" },
+];
+
+// Scoring factors + weights mirror lib/score.ts (APY 40 · TVL 20 · Trust 15 ·
+// Stability 15 · Prediction 10 → 100). Contributions below are a plausible
+// static breakdown for the top-ranked pool; they sum to the score shown.
+const scoreFactors = [
+  { k: "APY", v: 19, c: "#34E0A1" },
+  { k: "TVL", v: 20, c: "#2F7BFF" },
+  { k: "Trust", v: 15, c: "#F4B53F" },
+  { k: "Stability", v: 15, c: "#6FA5FF" },
+  { k: "Prediction", v: 9, c: "#FF8A3F" },
 ];
 
 export function EngineVisual() {
@@ -46,11 +50,7 @@ export function EngineVisual() {
             viewBox="0 0 16 16"
             fill="none"
           >
-            <path
-              d="M0 0H6M0 0V6"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
+            <path d="M0 0H6M0 0V6" stroke="currentColor" strokeWidth="1" />
           </svg>
         ))}
       </div>
@@ -69,9 +69,16 @@ export function EngineVisual() {
               wallet · 0x4a2…f8c1
             </span>
           </div>
-          <span className="text-[10px] font-mono text-mint flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-mint animate-pulse" />
-            LIVE
+          <span className="flex items-center gap-1.5 text-[10px] font-mono text-muted">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/infra/arbitrum.svg"
+              alt=""
+              width={11}
+              height={11}
+              className="w-[11px] h-[11px]"
+            />
+            Arbitrum
           </span>
         </div>
         <div className="space-y-1.5">
@@ -81,9 +88,13 @@ export function EngineVisual() {
               className="flex items-center justify-between text-xs"
             >
               <div className="flex items-center gap-2">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: t.color }}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={t.logo}
+                  alt={t.sym}
+                  width={18}
+                  height={18}
+                  className="w-[18px] h-[18px] rounded-full object-contain"
                 />
                 <span className="font-mono text-foreground">{t.sym}</span>
                 {t.idle && (
@@ -108,7 +119,7 @@ export function EngineVisual() {
         </div>
       </motion.div>
 
-      {/* Flow lines wallet -> engine */}
+      {/* Single flow connector: wallet -> ranked results */}
       <svg
         className="w-full h-12 -my-px"
         viewBox="0 0 100 50"
@@ -136,97 +147,16 @@ export function EngineVisual() {
         ))}
       </svg>
 
-      {/* Engine core */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3 }}
-        className="relative bg-surface-2 border border-border-strong rounded-lg p-4 overflow-hidden"
-      >
-        <div className="absolute -inset-px rounded-lg pointer-events-none">
-          <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
-        </div>
-        <div className="flex items-center justify-between mb-3 relative">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Cpu className="w-3.5 h-3.5 text-accent" />
-              <span className="absolute inset-0 rounded-full bg-accent/30 animate-pulse-ring" />
-            </div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-strong">
-              scoring engine
-            </span>
-          </div>
-          <span className="text-[10px] font-mono text-muted">
-            {PROTOCOL_COUNT} strategies analyzed
-          </span>
-        </div>
+      {/* Ranked opportunities (the engine result) */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-strong">
+          ranked opportunities
+        </span>
+        <span className="text-[10px] font-mono text-muted">
+          {PROTOCOL_COUNT} strategies scored
+        </span>
+      </div>
 
-        {/* Stage log */}
-        <div className="mb-3 space-y-1">
-          {stages.map((s) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, x: -4 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: s.delay, duration: 0.35 }}
-              className="flex items-center justify-between text-[10px] font-mono"
-            >
-              <span className="text-muted">→ {s.label}</span>
-              <Check className="w-3 h-3 text-mint" />
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Mini formula bars */}
-        <div className="grid grid-cols-4 gap-1.5 mb-1">
-          {[
-            { label: "APY", v: 92, c: "#34E0A1" },
-            { label: "Risk", v: 38, c: "#F4B53F" },
-            { label: "Liq", v: 78, c: "#2F7BFF" },
-            { label: "Gas", v: 22, c: "#FF5A6B" },
-          ].map((m, i) => (
-            <div key={m.label} className="space-y-1">
-              <div className="h-1 bg-border rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${m.v}%` }}
-                  transition={{ delay: 0.6 + i * 0.1, duration: 0.8 }}
-                  className="h-full rounded-full"
-                  style={{ background: m.c }}
-                />
-              </div>
-              <div className="text-[9px] font-mono uppercase tracking-wider text-muted text-center">
-                {m.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Flow lines engine -> opps */}
-      <svg
-        className="w-full h-10 -my-px"
-        viewBox="0 0 100 40"
-        preserveAspectRatio="none"
-      >
-        {[20, 50, 80].map((x, i) => (
-          <line
-            key={x}
-            x1="50"
-            y1="0"
-            x2={x}
-            y2="40"
-            stroke="#2F7BFF"
-            strokeWidth="0.4"
-            strokeOpacity="0.5"
-            strokeDasharray="2 2"
-            className="animate-flow"
-            style={{ animationDelay: `${0.5 + i * 0.3}s` }}
-          />
-        ))}
-      </svg>
-
-      {/* Opportunities */}
       <div className="space-y-1.5 mb-3">
         {opps.map((o, i) => (
           <motion.div
@@ -234,51 +164,100 @@ export function EngineVisual() {
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 + i * 0.1 }}
-            className="bg-surface border border-border rounded-lg p-3 flex items-center justify-between group hover:border-border-strong transition-colors"
+            className={`bg-surface border rounded-lg p-3 transition-colors ${
+              i === 0
+                ? "border-gold/40"
+                : "border-border hover:border-border-strong"
+            }`}
           >
-            <div className="flex items-center gap-3">
-              <span
-                className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-surface-2 overflow-hidden shrink-0"
-                style={{ boxShadow: `inset 0 0 0 1px ${o.color}40` }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={o.icon}
-                  alt={o.name}
-                  width={18}
-                  height={18}
-                  className="w-[18px] h-[18px] object-contain rounded-[22%]"
-                />
-              </span>
-              <div>
-                <div className="text-xs font-medium text-foreground">
-                  {o.name}{" "}
-                  <span className="text-muted font-mono">/ {o.asset}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span
+                  className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-surface-2 overflow-hidden shrink-0"
+                  style={{ boxShadow: `inset 0 0 0 1px ${o.color}40` }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={o.icon}
+                    alt={o.name}
+                    width={18}
+                    height={18}
+                    className="w-[18px] h-[18px] object-contain rounded-[22%]"
+                  />
+                </span>
+                <div>
+                  <div className="text-xs font-medium text-foreground">
+                    {o.name}{" "}
+                    <span className="text-muted font-mono">/ {o.asset}</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-muted uppercase tracking-wider mt-0.5">
+                    {i === 0 ? "top match" : `score ${o.score}`}
+                  </div>
                 </div>
-                <div className="text-[10px] font-mono text-muted uppercase tracking-wider mt-0.5">
-                  risk {o.risk}
+              </div>
+              <div className="text-right">
+                <div className="font-mono tabular text-sm font-semibold">
+                  {i === 0 ? (
+                    <span className="gradient-text-gold">{o.apy}%</span>
+                  ) : (
+                    <span className="text-foreground">{o.apy}%</span>
+                  )}
+                </div>
+                <div className="text-[10px] font-mono text-muted">
+                  net APY
+                  {i === 0 && (
+                    <ArrowUpRight className="inline w-2.5 h-2.5 ml-0.5 text-gold" />
+                  )}
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-mono tabular text-sm font-semibold">
-                {i === 0 && (
-                  <span className="gradient-text-gold">{o.apy}%</span>
-                )}
-                {i !== 0 && <span className="text-foreground">{o.apy}%</span>}
+
+            {/* Top match: composite score + 5-factor breakdown (lib/score.ts) */}
+            {i === 0 && (
+              <div className="mt-3 pt-3 border-t hairline">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+                    composite score
+                  </span>
+                  <span className="font-mono tabular text-xs">
+                    <span className="gradient-text-gold font-semibold">
+                      {o.score}
+                    </span>
+                    <span className="text-muted"> / 100</span>
+                  </span>
+                </div>
+                <div className="flex h-1.5 rounded-full overflow-hidden bg-border">
+                  {scoreFactors.map((f, fi) => (
+                    <motion.div
+                      key={f.k}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${f.v}%` }}
+                      transition={{ delay: 0.8 + fi * 0.08, duration: 0.6 }}
+                      style={{ background: f.c }}
+                    />
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                  {scoreFactors.map((f) => (
+                    <span
+                      key={f.k}
+                      className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-muted"
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: f.c }}
+                      />
+                      {f.k}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="text-[10px] font-mono text-muted">
-                net APY
-                {i === 0 && (
-                  <ArrowUpRight className="inline w-2.5 h-2.5 ml-0.5 text-gold" />
-                )}
-              </div>
-            </div>
+            )}
           </motion.div>
         ))}
       </div>
 
-      {/* Deploy block */}
+      {/* Deploy block — the conclusion of the top match */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -298,12 +277,14 @@ export function EngineVisual() {
             <div className="text-[10px] font-mono uppercase tracking-widest text-gold/90 mb-1.5">
               ready to deploy
             </div>
-            <div className="text-xs text-foreground truncate">
-              <span className="font-mono tabular">1,840 USDC</span>
+            <div className="text-sm text-foreground truncate">
+              <span className="font-mono tabular font-medium">1,840 USDC</span>
               <span className="text-muted mx-1.5">→</span>
               <span className="font-medium">Aave v3</span>
             </div>
             <div className="text-[10px] font-mono text-muted mt-1">
+              net APY <span className="text-foreground">4.31%</span>
+              <span className="mx-1.5">·</span>
               <span className="text-mint">+$184/yr</span>
               <span className="mx-1.5">·</span>1 signature
             </div>
