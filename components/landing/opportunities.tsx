@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, TrendingUp, AlertTriangle } from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
+import { ConnectButton } from "@/components/wallet/connect-button";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
 const cards = [
@@ -18,7 +19,6 @@ const cards = [
     gas: "-0.22",
     risk: { protocol: 18, vol: 8, liq: 5, gas: 12 },
     riskLabel: "Low",
-    why: "Top-tier audits, deep liquidity, and your $2.3k size keeps gas under 5% of yield.",
     color: "#B6509E",
   },
   {
@@ -34,7 +34,6 @@ const cards = [
     gas: "-0.46",
     risk: { protocol: 32, vol: 12, liq: 14, gas: 18 },
     riskLabel: "Medium",
-    why: "Cross-chain lending with RDNT emissions. Discounted 35% for emission decay.",
     color: "#7E62E5",
   },
   {
@@ -50,7 +49,6 @@ const cards = [
     gas: "-0.68",
     risk: { protocol: 22, vol: 48, liq: 18, gas: 14 },
     riskLabel: "High",
-    why: "Real-yield from trader losses, but basket has 32% volatile asset exposure.",
     color: "#03d1ce",
   },
 ];
@@ -62,22 +60,16 @@ export function Opportunities() {
       className="relative"
     >
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-6 lg:py-8">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-7">
-          <div className="max-w-2xl">
-            <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
-              [04] · Sample output
-            </div>
-            <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-              What a real scan returns.
-            </h2>
-            <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-              Top picks for a wallet holding $2,340 in idle USDC and ARB.
-            </p>
+        <div className="max-w-2xl mb-7">
+          <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
+            [04] · Sample output
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-muted">
-            <span className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse" />
-            live · sampled 2026-05-24 14:02 UTC
-          </div>
+          <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
+            What a real scan returns.
+          </h2>
+          <p className="mt-5 text-lg text-muted-strong leading-relaxed">
+            Top picks for a wallet holding $2,340 in idle USDC and ARB.
+          </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
@@ -138,13 +130,25 @@ export function Opportunities() {
                       }}
                     />
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="text-lg font-medium leading-tight truncate">
                       {c.proto}
                     </div>
                     <div className="font-mono text-sm text-muted mt-0.5">
                       Asset · {c.asset}
                     </div>
+                  </div>
+                  <div className="flex flex-col items-end flex-shrink-0">
+                    <span
+                      className={`font-mono tabular text-xl font-semibold leading-none ${
+                        i === 0 ? "gradient-text-gold" : "text-foreground"
+                      }`}
+                    >
+                      {c.score}
+                    </span>
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-muted mt-1">
+                      score
+                    </span>
                   </div>
                 </div>
               </div>
@@ -187,7 +191,7 @@ export function Opportunities() {
               </div>
 
               {/* Risk bars */}
-              <div className="px-5 py-4 border-b hairline">
+              <div className="px-5 pt-4 pb-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
                     Risk profile
@@ -232,43 +236,15 @@ export function Opportunities() {
                 </div>
               </div>
 
-              {/* Score + why */}
-              <div className="px-5 py-4">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="relative w-14 h-14 rounded-full bg-surface-2 border border-border-strong flex items-center justify-center flex-shrink-0">
-                    <div className="text-lg font-mono font-semibold tabular">
-                      {c.score}
-                    </div>
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-mono uppercase tracking-widest bg-background px-1.5 text-muted">
-                      score
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted leading-relaxed">
-                    {c.why}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    document
-                      .getElementById("cta")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }
-                  className="w-full btn-ghost rounded-md py-2.5 text-sm font-medium flex items-center justify-center gap-1.5 group-hover:bg-white/[0.06]"
-                >
-                  Simulate strategy
-                  <ArrowUpRight className="w-4 h-4" />
-                </button>
-              </div>
             </motion.div>
           ))}
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted">
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>
-            Connect a wallet to see the full ranked list.
-          </span>
+        <div className="mt-8 flex justify-center">
+          <ConnectButton size="lg" className="font-semibold">
+            Scan your wallet · full ranked list
+            <ArrowRight className="w-4 h-4" />
+          </ConnectButton>
         </div>
       </div>
     </section>
