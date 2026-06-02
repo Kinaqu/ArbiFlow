@@ -188,6 +188,7 @@ export type ChainMeta = {
   label: string;
   color: string;
   explorer: string;
+  logo: string;
 };
 
 export const CHAINS: Record<ChainKey, ChainMeta> = {
@@ -197,6 +198,7 @@ export const CHAINS: Record<ChainKey, ChainMeta> = {
     label: "Arbitrum",
     color: "#28A0F0",
     explorer: "https://arbiscan.io",
+    logo: "/icons/infra/arbitrum.svg",
   },
   base: {
     key: "base",
@@ -204,6 +206,7 @@ export const CHAINS: Record<ChainKey, ChainMeta> = {
     label: "Base",
     color: "#0052FF",
     explorer: "https://basescan.org",
+    logo: "/icons/chains/base.svg",
   },
   optimism: {
     key: "optimism",
@@ -211,6 +214,7 @@ export const CHAINS: Record<ChainKey, ChainMeta> = {
     label: "Optimism",
     color: "#FF0420",
     explorer: "https://optimistic.etherscan.io",
+    logo: "/icons/chains/optimism.png",
   },
 };
 
