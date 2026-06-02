@@ -1,11 +1,9 @@
 import { ReactNode } from "react";
-import { Nav } from "@/components/landing/nav";
 import { Footer } from "@/components/landing/footer";
 
 export function PageShell({ children }: { children: ReactNode }) {
   return (
     <>
-      <Nav />
       <main className="flex-1">{children}</main>
       <Footer />
     </>
