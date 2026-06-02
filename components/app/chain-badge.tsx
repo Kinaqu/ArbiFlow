@@ -1,8 +1,7 @@
 import { CHAINS, type ChainKey } from "@/lib/tokens";
 
-// Small chain marker — a colored dot + label, matching the protocol-icon
-// convention of "no remote asset, render a colored token". Avoids shipping
-// chain logo PNGs and the attendant 404 risk.
+// Small chain marker — the chain's real logo. The chain name is exposed on
+// hover (title) so the marker itself stays compact and text-free.
 export function ChainBadge({
   chain,
   className = "",
@@ -12,15 +11,14 @@ export function ChainBadge({
 }) {
   const meta = CHAINS[chain];
   return (
-    <span
-      className={`text-[9px] font-mono uppercase tracking-wider text-muted-strong border border-border rounded px-1 py-0.5 inline-flex items-center gap-1 flex-shrink-0 ${className}`}
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={meta.logo}
+      alt={meta.label}
       title={`${meta.label} · chain ${meta.id}`}
-    >
-      <span
-        className="w-1 h-1 rounded-full"
-        style={{ background: meta.color }}
-      />
-      {meta.label}
-    </span>
+      width={14}
+      height={14}
+      className={`w-3.5 h-3.5 object-contain flex-shrink-0 ${className}`}
+    />
   );
 }

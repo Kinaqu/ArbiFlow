@@ -373,16 +373,20 @@ function TokenCard({
           <div className="font-mono tabular text-2xl font-semibold gradient-text-gold leading-none">
             {fmtUsd(set.balanceUsd)}
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {set.sourceChains.map((s) => (
-              <span
-                key={s.chain}
-                className="inline-flex items-center gap-1 text-[10px] font-mono text-muted"
-              >
-                <ChainBadge chain={s.chain} />
-                {fmtUsd(s.usd)}
-              </span>
-            ))}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {set.sourceChains.length === 1 ? (
+              <ChainBadge chain={set.sourceChains[0].chain} />
+            ) : (
+              set.sourceChains.map((s) => (
+                <span
+                  key={s.chain}
+                  className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted"
+                >
+                  <ChainBadge chain={s.chain} />
+                  {fmtUsd(s.usd)}
+                </span>
+              ))
+            )}
           </div>
           {set.topPools[0] ? (
             <div className="mt-1.5 text-[11px] font-mono text-mint">
