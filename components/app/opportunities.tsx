@@ -27,7 +27,7 @@ import type {
 import type { ScoredPool, ScoreBreakdown } from "@/lib/score";
 import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
-import { CHAINS, type ChainKey } from "@/lib/tokens";
+import { CHAINS, tokenLogo, type ChainKey } from "@/lib/tokens";
 import { poolUrl } from "@/lib/aave";
 import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
 import { yearlyYield } from "@/lib/earnings";
@@ -363,39 +363,54 @@ function TokenCard({
   set: OpportunitySet;
   executeMode: ExecuteMode;
 }) {
+  const logo = tokenLogo(set.symbol);
   return (
     <article className="rounded-xl border border-border bg-surface overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-baseline justify-between gap-3">
-        <div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
-            idle · {set.symbol}
-          </div>
-          <div className="font-mono tabular text-2xl font-semibold gradient-text-gold leading-none">
-            {fmtUsd(set.balanceUsd)}
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            {set.sourceChains.length === 1 ? (
-              <ChainBadge chain={set.sourceChains[0].chain} />
-            ) : (
-              set.sourceChains.map((s) => (
-                <span
-                  key={s.chain}
-                  className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted"
-                >
-                  <ChainBadge chain={s.chain} />
-                  {fmtUsd(s.usd)}
-                </span>
-              ))
-            )}
-          </div>
-          {set.topPools[0] ? (
-            <div className="mt-1.5 text-[11px] font-mono text-mint">
-              → up to +{fmtUsd(yearlyYield(set.balanceUsd, set.topPools[0].apy))}/yr
-              <span className="text-muted">
-                {" "}at {fmtApy(set.topPools[0].apy)}
-              </span>
+      <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          {logo ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={logo}
+              alt={set.symbol}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-[22%] object-contain flex-shrink-0"
+            />
+          ) : (
+            <span className="w-8 h-8 rounded-[22%] flex-shrink-0 bg-surface-2" />
+          )}
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
+              idle · {set.symbol}
             </div>
-          ) : null}
+            <div className="font-mono tabular text-2xl font-semibold gradient-text-gold leading-none">
+              {fmtUsd(set.balanceUsd)}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {set.sourceChains.length === 1 ? (
+                <ChainBadge chain={set.sourceChains[0].chain} />
+              ) : (
+                set.sourceChains.map((s) => (
+                  <span
+                    key={s.chain}
+                    className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted"
+                  >
+                    <ChainBadge chain={s.chain} />
+                    {fmtUsd(s.usd)}
+                  </span>
+                ))
+              )}
+            </div>
+            {set.topPools[0] ? (
+              <div className="mt-1.5 text-[11px] font-mono text-mint">
+                → up to +{fmtUsd(yearlyYield(set.balanceUsd, set.topPools[0].apy))}/yr
+                <span className="text-muted">
+                  {" "}at {fmtApy(set.topPools[0].apy)}
+                </span>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="text-[10px] font-mono uppercase tracking-wider text-muted">
           top {set.topPools.length}
