@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Plug, ScanLine, Sparkles, Rocket } from "lucide-react";
 import clsx from "clsx";
 import { PROTOCOL_COUNT } from "@/lib/constants";
@@ -42,7 +42,7 @@ const steps = [
   },
 ];
 
-const SWAP_INTERVAL = 4000;
+const SWAP_INTERVAL = 3200;
 
 function StepFace({ s }: { s: (typeof steps)[number] }) {
   const Icon = s.icon;
@@ -136,18 +136,29 @@ export function HowItWorks() {
         {/* lg+ : copy + synced step rail (left) · CardSwap stack (right) */}
         <div className="hidden items-center gap-12 lg:grid lg:grid-cols-12">
           <div className="lg:col-span-5">
-            {header}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.5 }}
+            >
+              {header}
+            </motion.div>
 
             <div className="mt-10 flex flex-col gap-1">
               {steps.map((s, i) => {
                 const Icon = s.icon;
                 const isActive = i === active;
                 return (
-                  <button
+                  <motion.button
                     key={s.n}
                     type="button"
                     onClick={() => bringToFront(i)}
                     aria-current={isActive ? "step" : undefined}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-80px" }}
+                    transition={{ duration: 0.4, delay: 0.15 + i * 0.07 }}
                     className={clsx(
                       "flex items-center gap-4 rounded-lg px-3 py-3 text-left transition-colors",
                       isActive ? "bg-surface-2" : "hover:bg-surface"
@@ -181,13 +192,19 @@ export function HowItWorks() {
                     >
                       {s.title}
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
           </div>
 
-          <div className="lg:col-span-7">
+          <motion.div
+            className="lg:col-span-7"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <div
               className="relative mx-auto h-[500px] w-full max-w-[560px]"
               onMouseEnter={() => {
@@ -205,7 +222,7 @@ export function HowItWorks() {
                 ))}
               </CardSwap>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* below lg : static grid, all four steps visible */}

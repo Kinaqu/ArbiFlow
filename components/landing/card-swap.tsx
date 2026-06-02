@@ -75,7 +75,7 @@ export function CardSwap({
               skewY: skewAmount,
               transformPerspective: 900,
             }}
-            transition={{ type: "spring", stiffness: 260, damping: 28 }}
+            transition={{ type: "spring", stiffness: 340, damping: 34 }}
             onClick={onCardClick ? () => onCardClick(idx) : undefined}
           >
             {card}
