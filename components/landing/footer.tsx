@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./logo";
+import { BackgroundBoxes } from "./background-boxes";
 
 type Item = { label: string; href: string; external?: boolean };
 
@@ -9,6 +10,7 @@ const cols: { title: string; items: Item[] }[] = [
     items: [
       { label: "Engine", href: "/engine" },
       { label: "Strategies", href: "/strategies" },
+      { label: "Portfolio", href: "/portfolio" },
       { label: "Risk model", href: "/risk-model" },
       { label: "Dashboard", href: "/app" },
       { label: "Changelog", href: "/changelog" },
@@ -37,11 +39,19 @@ const cols: { title: string; items: Item[] }[] = [
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-border bg-surface/40">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 py-14">
+    <footer className="relative overflow-hidden border-t border-border bg-surface/40">
+      {/* Decorative hover grid (desktop only, reduced-motion-safe). It sits at
+          z-0 and stays hit-testable; the content layer below is
+          pointer-events-none so hover in the gaps lights up the cells, while
+          each link re-enables pointer events to stay clickable. */}
+      <BackgroundBoxes className="absolute inset-0 z-0 hidden md:block" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-5 lg:px-8 py-14 md:pointer-events-none">
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">
-            <Logo />
+            <span className="pointer-events-auto inline-flex">
+              <Logo />
+            </span>
             <p className="mt-5 text-sm text-muted max-w-sm leading-relaxed">
               An Arbitrum-native capital intelligence layer for retail and
               prosumer DeFi users.
@@ -64,7 +74,7 @@ export function Footer() {
                         href={item.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-muted hover:text-foreground transition-colors"
+                        className="pointer-events-auto text-sm text-muted hover:text-foreground transition-colors"
                       >
                         {item.label}
                       </a>
@@ -73,7 +83,7 @@ export function Footer() {
                     <li key={item.label}>
                       <Link
                         href={item.href}
-                        className="text-sm text-muted hover:text-foreground transition-colors"
+                        className="pointer-events-auto text-sm text-muted hover:text-foreground transition-colors"
                       >
                         {item.label}
                       </Link>
