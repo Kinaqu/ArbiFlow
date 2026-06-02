@@ -69,6 +69,15 @@ export function Nav() {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
 
+  // Nav lives in the root layout and stays mounted across route changes, so
+  // close the mobile menu when the path changes (incl. programmatic redirects).
+  // Adjust-state-during-render rather than an effect, per the React docs.
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (pathname !== menuPath) {
+    setMenuPath(pathname);
+    setOpen(false);
+  }
+
   return (
     <motion.header
       initial={reduced ? false : { opacity: 0, y: -8 }}
