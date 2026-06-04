@@ -30,7 +30,7 @@ import type { ScanResult, ScannedToken } from "@/lib/scan";
 import { PORTAL_CATEGORY_LABELS, type PortalCategory } from "@/lib/portal";
 import { CHAINS, tokenLogo, type ChainKey } from "@/lib/tokens";
 import { poolUrl } from "@/lib/aave";
-import { fmtApy, fmtTvl, fmtUsd } from "@/lib/format";
+import { fmtApy, fmtTvl, fmtUsd, relativeTime } from "@/lib/format";
 import { yearlyYield } from "@/lib/earnings";
 import { DepositModal } from "@/components/app/deposit-modal";
 import { BridgeModal } from "@/components/app/bridge-modal";
@@ -306,15 +306,20 @@ function SourceBadge({
   generatedAt: string;
 }) {
   const isSnapshot = source === "snapshot";
+  // Re-render every 30s so the live "updated …" label keeps counting up instead
+  // of looking frozen at the fetch time.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (isSnapshot) return;
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [isSnapshot]);
+
   const time = new Date(generatedAt);
-  const stamp = Number.isNaN(time.getTime())
-    ? generatedAt
-    : time.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  const valid = !Number.isNaN(time.getTime());
+  const label = isSnapshot
+    ? `snapshot · ${valid ? time.toLocaleString("en-US", { month: "short", day: "numeric" }) : generatedAt}`
+    : `live · updated ${valid ? relativeTime(generatedAt) : "just now"}`;
   return (
     <div
       className={`text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5 ${
@@ -331,7 +336,7 @@ function SourceBadge({
           isSnapshot ? "bg-gold" : "bg-mint"
         }`}
       />
-      {isSnapshot ? "snapshot" : "live"} · {stamp}
+      {label}
     </div>
   );
 }

@@ -78,6 +78,17 @@ contract RebalanceTest is Test {
         });
     }
 
+    function _withdrawCall(uint256 amount) internal view returns (DelegationVault.Call[] memory calls) {
+        calls = new DelegationVault.Call[](1);
+        calls[0] = DelegationVault.Call({
+            target: address(proto),
+            sellToken: address(pos),
+            sellAmount: amount,
+            value: 0,
+            data: abi.encodeCall(MockProtocol.withdraw, (amount, address(vault)))
+        });
+    }
+
     function test_RebalanceSupplyPreservesValue() public {
         DelegationVault.Call[] memory calls = _supplyCall(FUND);
         bytes memory sig = _sign(calls, 0, block.timestamp + 1 hours);
@@ -163,5 +174,63 @@ contract RebalanceTest is Test {
         vm.prank(keeper);
         vm.expectRevert(bytes("bad signature"));
         vault.rebalance(calls, deadline, sig);
+    }
+
+    function test_RedeemReturnsUnderlying() public {
+        // Supply into the protocol, then redeem the position 1:1 back to USDC.
+        DelegationVault.Call[] memory into = _supplyCall(FUND);
+        vm.prank(keeper);
+        vault.rebalance(into, block.timestamp + 1 hours, _sign(into, 0, block.timestamp + 1 hours));
+        assertEq(pos.balanceOf(address(vault)), FUND);
+
+        DelegationVault.Call[] memory out = _withdrawCall(FUND);
+        vm.prank(keeper);
+        vault.rebalance(out, block.timestamp + 1 hours, _sign(out, 1, block.timestamp + 1 hours));
+
+        assertEq(pos.balanceOf(address(vault)), 0, "position redeemed");
+        assertEq(usdc.balanceOf(address(vault)), FUND, "underlying returned 1:1");
+    }
+
+    function test_RebalanceMovesBetweenProtocols() public {
+        // A second protocol (B) the funds can move into.
+        MockERC20 posB = new MockERC20("Mock bUSDC", "mbUSDC", 6);
+        MockProtocol protoB = new MockProtocol(IERC20(address(usdc)), posB);
+        vm.startPrank(admin);
+        factory.setAsset(address(posB), true);
+        factory.setTarget(address(protoB), true);
+        factory.setPrice(address(posB), 1e18);
+        vm.stopPrank();
+
+        // Supply into A first.
+        DelegationVault.Call[] memory into = _supplyCall(FUND);
+        vm.prank(keeper);
+        vault.rebalance(into, block.timestamp + 1 hours, _sign(into, 0, block.timestamp + 1 hours));
+        assertEq(pos.balanceOf(address(vault)), FUND);
+
+        // Move A -> B: withdraw from A and supply to B in one signed batch. The
+        // value invariant is measured across the whole batch, so the USDC held
+        // mid-batch is fine as long as it lands back in a priced position.
+        DelegationVault.Call[] memory move = new DelegationVault.Call[](2);
+        move[0] = DelegationVault.Call({
+            target: address(proto),
+            sellToken: address(pos),
+            sellAmount: FUND,
+            value: 0,
+            data: abi.encodeCall(MockProtocol.withdraw, (FUND, address(vault)))
+        });
+        move[1] = DelegationVault.Call({
+            target: address(protoB),
+            sellToken: address(usdc),
+            sellAmount: FUND,
+            value: 0,
+            data: abi.encodeCall(MockProtocol.supply, (FUND, address(vault)))
+        });
+        vm.prank(keeper);
+        vault.rebalance(move, block.timestamp + 1 hours, _sign(move, 1, block.timestamp + 1 hours));
+
+        assertEq(pos.balanceOf(address(vault)), 0, "left protocol A");
+        assertEq(posB.balanceOf(address(vault)), FUND, "arrived in protocol B");
+        assertEq(usdc.balanceOf(address(vault)), 0, "no stranded underlying");
+        assertEq(vault.nonce(), 2);
     }
 }
