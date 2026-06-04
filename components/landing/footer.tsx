@@ -23,6 +23,7 @@ const cols: { title: string; items: Item[] }[] = [
       { label: "API", href: "/api-docs" },
       { label: "Methodology", href: "/methodology" },
       { label: "Open data", href: "/open-data" },
+      { label: "Architecture", href: "/architecture" },
       { label: "Status", href: "/status" },
     ],
   },
