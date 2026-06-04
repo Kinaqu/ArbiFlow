@@ -14,8 +14,25 @@ import {
   OwnershipBanner,
   OwnershipBadge,
 } from "@/components/app/ownership";
+import {
+  NetworkToggle,
+  useNetworkMode,
+} from "@/components/app/network-mode";
+import { TestnetApp } from "@/components/app/testnet/testnet-app";
 
 export default function AppPage() {
+  const { mode } = useNetworkMode();
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="mx-auto w-full max-w-7xl px-5 lg:px-8 pt-6 flex justify-end">
+        <NetworkToggle />
+      </div>
+      {mode === "testnet" ? <TestnetApp /> : <MainnetApp />}
+    </div>
+  );
+}
+
+function MainnetApp() {
   const searchParams = useSearchParams();
   const demoAddress = searchParams.get("address");
   const { address: connectedAddress, isConnected } = useAccount();

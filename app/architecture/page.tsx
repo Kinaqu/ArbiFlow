@@ -77,14 +77,13 @@ const flow: { step: "deposit" | "rebalance" | "withdraw"; detail: string }[] = [
   },
 ];
 
-const contracts: {
-  label: string;
-  key: "factory" | "vault" | "protocol" | "usdc";
-}[] = [
-  { label: "VaultFactory", key: "factory" },
-  { label: "DelegationVault", key: "vault" },
-  { label: "Demo protocol", key: "protocol" },
-  { label: "Demo USDC", key: "usdc" },
+const contractRows: { label: string; addr: string }[] = [
+  { label: "VaultFactory", addr: DEPLOYMENT.factory },
+  { label: "Demo USDC (afUSDC)", addr: DEPLOYMENT.usdc },
+  ...(DEPLOYMENT.demoVault
+    ? [{ label: "Demo vault", addr: DEPLOYMENT.demoVault }]
+    : []),
+  ...DEPLOYMENT.protocols.map((p) => ({ label: p.label, addr: p.address })),
 ];
 
 const forkTests = [
@@ -241,8 +240,8 @@ export default function ArchitecturePage() {
             </div>
             {deployed ? (
               <ul className="space-y-2.5">
-                {contracts.map((c) => {
-                  const addr = DEPLOYMENT[c.key];
+                {contractRows.map((c) => {
+                  const addr = c.addr;
                   if (!addr) return null;
                   return (
                     <li

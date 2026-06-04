@@ -8,11 +8,13 @@ import {DelegationVault} from "../src/DelegationVault.sol";
 import {MockERC20} from "../test/mocks/MockERC20.sol";
 import {MockProtocol} from "../test/mocks/MockProtocol.sol";
 
-/// @notice End-to-end demo on Arbitrum Sepolia: deploys the vault stack plus a
-/// stand-in yield protocol, then runs deposit -> backend-signed rebalance ->
-/// owner withdraw as real on-chain transactions. The mock protocol stands in
-/// for the real markets (Aave/Compound/...) wired on mainnet; the same path is
-/// proven against the real Aave V3 pool in test/RebalanceForkAave.t.sol.
+/// @notice End-to-end demo on Arbitrum Sepolia: deploys the vault stack plus
+/// THREE stand-in yield protocols (Aave / Compound / Morpho demo), then runs
+/// deposit -> supply into protocol A -> rebalance A->B -> owner withdraw as real
+/// on-chain transactions. The mock protocols stand in for the real markets wired
+/// on mainnet; the same path is proven against the real Aave V3 pool in
+/// test/RebalanceForkAave.t.sol. The three-protocol layout is what the in-app
+/// testnet view uses to show funds moving between protocols.
 ///
 /// Run (deployer key needs Arbitrum Sepolia ETH):
 ///   DEPLOYER_PK=0x... ARBITRUM_SEPOLIA_RPC_URL=... \
@@ -27,77 +29,148 @@ contract DeployDemo is Script {
 
     uint256 constant FUND = 1_000e6;
 
+    // Deployed pieces are kept in storage so run()'s frame stays shallow (the
+    // alternative is a stack-too-deep with this many locals).
+    uint256 backendPk;
+    MockERC20 usdc;
+    MockProtocol aave;
+    MockERC20 posAave;
+    MockProtocol compound;
+    MockERC20 posComp;
+    MockProtocol morpho;
+    MockERC20 posMorpho;
+    VaultFactory factory;
+    DelegationVault vault;
+
     function run() external {
         uint256 deployerPk = vm.envUint("DEPLOYER_PK");
         // Demo backend signer. In production this key lives in the ArbiFlow
         // backend and signs every allocation; fine to default for a testnet demo.
-        uint256 backendPk = vm.envOr("BACKEND_PK", uint256(0xA11CE));
+        backendPk = vm.envOr("BACKEND_PK", uint256(0xA11CE));
         address deployer = vm.addr(deployerPk);
-        address backendSigner = vm.addr(backendPk);
 
         vm.startBroadcast(deployerPk);
+        _deploy(deployer, vm.addr(backendPk));
+        _demo(deployer);
+        vm.stopBroadcast();
 
-        // 1. Demo tokens + stand-in yield protocol.
-        MockERC20 usdc = new MockERC20("USD Coin (ArbiFlow demo)", "afUSDC", 6);
-        MockERC20 pos = new MockERC20("ArbiFlow aUSDC", "af-aUSDC", 6);
-        MockProtocol proto = new MockProtocol(usdc, pos);
+        _log(deployer);
+    }
 
-        // 2. Vault factory (admin = deployer, 1% max slippage) + curated config.
-        VaultFactory factory = new VaultFactory(deployer, backendSigner, 100);
+    /// @dev Deploy the stable, three demo protocols, and the curated factory.
+    function _deploy(address deployer, address backendSigner) internal {
+        usdc = new MockERC20("USD Coin (ArbiFlow demo)", "afUSDC", 6);
+        (aave, posAave) = _protocol("ArbiFlow aUSDC (Aave demo)", "af-aUSDC");
+        (compound, posComp) = _protocol("ArbiFlow cUSDC (Compound demo)", "af-cUSDC");
+        (morpho, posMorpho) = _protocol("ArbiFlow mUSDC (Morpho demo)", "af-mUSDC");
+
+        // Admin = deployer, 1% max slippage. Every demo protocol is a whitelisted
+        // target; every token is a priced asset valued by the rebalance invariant.
+        factory = new VaultFactory(deployer, backendSigner, 100);
         factory.setAsset(address(usdc), true);
-        factory.setAsset(address(pos), true);
-        factory.setTarget(address(proto), true);
         factory.setPrice(address(usdc), 1e18);
-        factory.setPrice(address(pos), 1e18);
+        _curate(aave, posAave);
+        _curate(compound, posComp);
+        _curate(morpho, posMorpho);
+    }
 
-        // 3. Per-user vault; deployer doubles as the demo keeper.
-        DelegationVault vault = DelegationVault(factory.createVault());
+    /// @dev Deposit -> supply into Aave -> move Aave->Compound -> owner withdraw.
+    function _demo(address deployer) internal {
+        vault = DelegationVault(factory.createVault());
         vault.setKeeper(deployer);
 
-        // 4. Deposit: idle USDC -> vault.
+        // Deposit: idle USDC -> vault.
         usdc.mint(deployer, FUND);
         usdc.approve(address(vault), FUND);
         vault.deposit(address(usdc), FUND);
 
-        // 5. Rebalance: backend-signed supply of the USDC into the protocol.
-        DelegationVault.Call[] memory calls = new DelegationVault.Call[](1);
-        calls[0] = DelegationVault.Call({
-            target: address(proto),
-            sellToken: address(usdc),
-            sellAmount: FUND,
-            value: 0,
-            data: abi.encodeCall(MockProtocol.supply, (FUND, address(vault)))
-        });
-        uint256 deadline = block.timestamp + 1 hours;
-        bytes memory sig = _sign(backendPk, address(vault), calls, vault.nonce(), deadline);
-        vault.rebalance(calls, deadline, sig);
+        // Rebalance #1: backend-signed supply of the USDC into Aave (demo).
+        DelegationVault.Call[] memory supplyA = new DelegationVault.Call[](1);
+        supplyA[0] = _supply(aave, FUND);
+        _runRebalance(supplyA);
 
-        // 6. Owner withdraw: pull the position out (non-custodial escape hatch).
-        uint256 posBal = pos.balanceOf(address(vault));
-        vault.withdraw(address(pos), posBal, deployer);
+        // Rebalance #2: move the position Aave -> Compound (withdraw, re-supply).
+        // This is the cross-protocol move the in-app testnet view animates.
+        DelegationVault.Call[] memory move = new DelegationVault.Call[](2);
+        move[0] = _withdraw(aave, posAave, FUND);
+        move[1] = _supply(compound, FUND);
+        _runRebalance(move);
 
-        vm.stopBroadcast();
-
-        console.log("=== ArbiFlow testnet demo (Arbitrum Sepolia) ===");
-        console.log("factory        ", address(factory));
-        console.log("vault          ", address(vault));
-        console.log("usdc           ", address(usdc));
-        console.log("posToken       ", address(pos));
-        console.log("protocol       ", address(proto));
-        console.log("deployer/keeper", deployer);
-        console.log("backendSigner  ", backendSigner);
+        // Owner withdraw: pull the position out (non-custodial escape hatch).
+        vault.withdraw(address(posComp), posComp.balanceOf(address(vault)), deployer);
     }
 
-    function _sign(uint256 pk, address vaultAddr, DelegationVault.Call[] memory calls, uint256 nonce_, uint256 deadline)
+    function _protocol(string memory name, string memory symbol)
+        internal
+        returns (MockProtocol proto, MockERC20 pos)
+    {
+        pos = new MockERC20(name, symbol, 6);
+        proto = new MockProtocol(usdc, pos);
+    }
+
+    function _curate(MockProtocol proto, MockERC20 pos) internal {
+        factory.setTarget(address(proto), true);
+        factory.setAsset(address(pos), true);
+        factory.setPrice(address(pos), 1e18);
+    }
+
+    function _supply(MockProtocol proto, uint256 amount)
+        internal
+        view
+        returns (DelegationVault.Call memory)
+    {
+        return DelegationVault.Call({
+            target: address(proto),
+            sellToken: address(usdc),
+            sellAmount: amount,
+            value: 0,
+            data: abi.encodeCall(MockProtocol.supply, (amount, address(vault)))
+        });
+    }
+
+    function _withdraw(MockProtocol proto, MockERC20 pos, uint256 amount)
+        internal
+        view
+        returns (DelegationVault.Call memory)
+    {
+        return DelegationVault.Call({
+            target: address(proto),
+            sellToken: address(pos),
+            sellAmount: amount,
+            value: 0,
+            data: abi.encodeCall(MockProtocol.withdraw, (amount, address(vault)))
+        });
+    }
+
+    function _runRebalance(DelegationVault.Call[] memory calls) internal {
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes memory sig = _sign(calls, vault.nonce(), deadline);
+        vault.rebalance(calls, deadline, sig);
+    }
+
+    function _sign(DelegationVault.Call[] memory calls, uint256 nonce_, uint256 deadline)
         internal
         view
         returns (bytes memory)
     {
         bytes32 callsHash = keccak256(abi.encode(calls));
         bytes32 structHash = keccak256(abi.encode(ALLOCATION_TYPEHASH, callsHash, nonce_, deadline));
-        bytes32 domain = keccak256(abi.encode(DOMAIN_TYPEHASH, NAME_HASH, VERSION_HASH, block.chainid, vaultAddr));
+        bytes32 domain =
+            keccak256(abi.encode(DOMAIN_TYPEHASH, NAME_HASH, VERSION_HASH, block.chainid, address(vault)));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domain, structHash));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(backendPk, digest);
         return abi.encodePacked(r, s, v);
+    }
+
+    function _log(address deployer) internal view {
+        console.log("=== ArbiFlow testnet demo (Arbitrum Sepolia) ===");
+        console.log("factory        ", address(factory));
+        console.log("vault          ", address(vault));
+        console.log("usdc           ", address(usdc));
+        console.log("aave proto     ", address(aave), " pos", address(posAave));
+        console.log("compound proto ", address(compound), " pos", address(posComp));
+        console.log("morpho proto   ", address(morpho), " pos", address(posMorpho));
+        console.log("deployer/keeper", deployer);
+        console.log("backendSigner  ", vm.addr(backendPk));
     }
 }
