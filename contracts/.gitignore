@@ -1,0 +1,8 @@
+# Foundry
+out/
+cache/
+.env
+
+# Dependencies are plain clones (no submodules); restore with the commands in
+# README.md rather than committing them.
+lib/
