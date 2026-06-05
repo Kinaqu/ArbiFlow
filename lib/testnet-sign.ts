@@ -1,13 +1,13 @@
-// Client-side allocation signing for the testnet vault demo.
+// Shared EIP-712 allocation encoding for the testnet vault demo.
 //
-// The deployed factory's `backendSigner` is the public demo key 0xA11CE, so the
-// browser can sign each rebalance allocation and the user (as their own vault's
-// keeper) submits it — a fully self-service testnet flow with no backend. In
-// production this key lives only in the ArbiFlow backend; never ship a real
-// signer key to the client.
+// A rebalance is authorized by a backend signature over
+// Allocation(callsHash, nonce, deadline). Signing now happens server-side in
+// `lib/keeper-signer.ts` with the backend key — never in the browser — so this
+// module only builds the calls hash and typed-data shape that the client and
+// server must agree on. The chain still enforces that only whitelisted targets
+// are touched, value can't drop, and only the owner can withdraw.
 
 import { encodeAbiParameters, keccak256 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 
 export type VaultCall = {
   target: `0x${string}`;
@@ -16,10 +16,6 @@ export type VaultCall = {
   value: bigint;
   data: `0x${string}`;
 };
-
-// 0xA11CE padded to 32 bytes → address 0xe05fcC23807536bEe418f142D19fa0d21BB0cfF7.
-const DEMO_SIGNER_PK =
-  "0x00000000000000000000000000000000000000000000000000000000000a11ce" as const;
 
 const CALL_TUPLE_ARRAY = [
   {
@@ -39,33 +35,36 @@ export function callsHashOf(calls: VaultCall[]): `0x${string}` {
   return keccak256(encodeAbiParameters(CALL_TUPLE_ARRAY, [calls]));
 }
 
-/** EIP-712 signature over Allocation(callsHash, nonce, deadline) for a vault. */
-export function signAllocation(params: {
+/** EIP-712 type definition for the vault's `Allocation` struct. */
+export const ALLOCATION_TYPES = {
+  Allocation: [
+    { name: "callsHash", type: "bytes32" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ],
+} as const;
+
+/** Full typed-data payload for `signTypedData` over Allocation(...) for a vault. */
+export function allocationTypedData(params: {
   vault: `0x${string}`;
   chainId: number;
   calls: VaultCall[];
   nonce: bigint;
   deadline: bigint;
-}): Promise<`0x${string}`> {
-  return privateKeyToAccount(DEMO_SIGNER_PK).signTypedData({
+}) {
+  return {
     domain: {
       name: "ArbiFlowDelegationVault",
       version: "1",
       chainId: params.chainId,
       verifyingContract: params.vault,
     },
-    types: {
-      Allocation: [
-        { name: "callsHash", type: "bytes32" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-      ],
-    },
-    primaryType: "Allocation",
+    types: ALLOCATION_TYPES,
+    primaryType: "Allocation" as const,
     message: {
       callsHash: callsHashOf(params.calls),
       nonce: params.nonce,
       deadline: params.deadline,
     },
-  });
+  };
 }
