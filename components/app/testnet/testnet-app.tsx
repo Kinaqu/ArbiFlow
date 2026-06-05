@@ -65,10 +65,11 @@ function Header() {
         <span className="gradient-text-gold">delegation vault</span>, live
       </h1>
       <p className="text-muted-strong max-w-2xl">
-        Mint test afUSDC from the faucet, deposit it into your own vault, then
-        watch ArbiFlow rebalance it across protocols — every step a real
-        transaction on Arbitrum Sepolia. The vault can be rebalanced but never
-        drained: only you can withdraw.
+        Mint test afUSDC, deposit it into your own vault, and approve the
+        protocols you trust — then ArbiFlow&apos;s backend scores them every ~25s
+        and moves, or deliberately holds, your funds. You can never move funds
+        yourself, only withdraw; every rebalance is a real transaction on
+        Arbitrum Sepolia.
       </p>
     </div>
   );
@@ -128,11 +129,11 @@ function ActivityLog({ txs }: { txs: VaultApi["txs"] }) {
 function SignerNote() {
   return (
     <p className="text-[11px] text-muted leading-relaxed border-t border-border pt-4">
-      Allocations are signed in your browser with a public demo key so the
-      testnet flow is fully self-service. In production that signer lives only in
-      the ArbiFlow backend — it authorizes <em>where</em> funds may move, but the
-      chain still enforces that only whitelisted protocols are touched and value
-      can&apos;t drop, and only you can withdraw.
+      Rebalances are decided and signed by ArbiFlow&apos;s backend — the keeper
+      key never reaches your browser — and submitted by the backend, which pays
+      the gas. It authorizes <em>where</em> funds may move, but the chain still
+      enforces that only whitelisted protocols are touched and value can&apos;t
+      drop, and only you can withdraw.
     </p>
   );
 }

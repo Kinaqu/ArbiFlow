@@ -50,6 +50,16 @@ export const VAULT_ABI = [
   },
   {
     type: "function",
+    name: "emergencyWithdraw",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokens", type: "address[]" },
+      { name: "to", type: "address" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "setKeeper",
     stateMutability: "nonpayable",
     inputs: [{ name: "keeper", type: "address" }],

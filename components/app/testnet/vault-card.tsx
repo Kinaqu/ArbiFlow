@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import { ExternalLink, Loader2, Vault } from "lucide-react";
+import { ExternalLink, Loader2, ShieldCheck, Vault } from "lucide-react";
 import { fmtUsdc } from "@/lib/format";
 import { arbiscanSepolia } from "@/lib/testnet";
 import type { VaultApi } from "./testnet-app";
@@ -14,6 +14,8 @@ export function VaultCard({ v }: { v: VaultApi }) {
   const creating = v.pending === "create";
   const depositing = v.pending === "deposit";
   const withdrawing = v.pending === "withdraw";
+  const delegating = v.pending === "delegate";
+  const forcing = v.pending === "forceExit";
 
   const walletNum = Number(formatUnits(state.walletUsdc, 6));
   const amountNum = Number(amount) || 0;
@@ -38,8 +40,9 @@ export function VaultCard({ v }: { v: VaultApi }) {
       {!state.vault ? (
         <>
           <p className="text-sm text-muted-strong">
-            Deploy your own non-custodial vault clone. You own it and are its
-            keeper — ArbiFlow can rebalance it, but can never withdraw your funds.
+            Deploy your own non-custodial vault clone, delegated to ArbiFlow. The
+            backend becomes its keeper — it can rebalance across the protocols you
+            approve, but can never withdraw. Only you can take funds out.
           </p>
           <button
             type="button"
@@ -48,7 +51,7 @@ export function VaultCard({ v }: { v: VaultApi }) {
             className="btn-primary w-full rounded-md py-2.5 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {creating ? "Creating vault…" : "Create vault"}
+            {creating ? "Creating + delegating…" : "Create vault"}
           </button>
         </>
       ) : (
@@ -71,6 +74,29 @@ export function VaultCard({ v }: { v: VaultApi }) {
               vault <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+
+          {v.delegated ? (
+            <div className="flex items-center gap-2 text-[11px] text-mint">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Delegated to ArbiFlow — only you can withdraw.
+            </div>
+          ) : (
+            <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 space-y-2">
+              <p className="text-[11px] text-muted-strong">
+                This vault isn&apos;t delegated yet, so ArbiFlow can&apos;t
+                rebalance it. Grant permission to start.
+              </p>
+              <button
+                type="button"
+                onClick={() => v.delegate()}
+                disabled={!!v.pending}
+                className="btn-primary w-full rounded-md py-2 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {delegating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {delegating ? "Delegating…" : "Delegate to ArbiFlow"}
+              </button>
+            </div>
+          )}
 
           <div className="rounded-lg border border-border bg-surface-2/40 p-3 space-y-2">
             <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted">
@@ -108,15 +134,26 @@ export function VaultCard({ v }: { v: VaultApi }) {
           </div>
 
           {state.activeAmount > BigInt(0) ? (
-            <button
-              type="button"
-              onClick={() => v.withdrawAll()}
-              disabled={!!v.pending}
-              className="btn-ghost w-full rounded-md py-2 text-sm font-medium text-foreground inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {withdrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {withdrawing ? "Withdrawing…" : "Withdraw all to wallet"}
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => v.withdrawAll()}
+                disabled={!!v.pending}
+                className="btn-ghost w-full rounded-md py-2 text-sm font-medium text-foreground inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {withdrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {withdrawing ? "Withdrawing…" : "Withdraw all to wallet"}
+              </button>
+              <button
+                type="button"
+                onClick={() => v.forceExit()}
+                disabled={!!v.pending}
+                className="w-full text-[11px] text-muted hover:text-rose inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {forcing ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                {forcing ? "Force exiting…" : "Force exit (emergency, skips the keeper)"}
+              </button>
+            </div>
           ) : null}
         </>
       )}
