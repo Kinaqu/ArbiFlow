@@ -55,7 +55,7 @@ contract VaultFactory is Ownable, IVaultConfig {
     function createVault() external returns (address vault) {
         require(vaultOf[msg.sender] == address(0), "vault exists");
         vault = Clones.cloneDeterministic(implementation, _salt(msg.sender));
-        DelegationVault(vault).initialize(msg.sender, address(this));
+        DelegationVault(payable(vault)).initialize(msg.sender, address(this));
         vaultOf[msg.sender] = vault;
         emit VaultCreated(msg.sender, vault);
     }

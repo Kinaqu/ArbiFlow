@@ -100,6 +100,19 @@ export const VAULT_ABI = [
     ],
     outputs: [],
   },
+  // Owner reclaims unused gas-reserve ETH.
+  {
+    type: "function",
+    name: "withdrawEth",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "amount", type: "uint256" },
+      { name: "to", type: "address" },
+    ],
+    outputs: [],
+  },
+  // Plain ETH transfers fund the gas reserve.
+  { type: "receive", stateMutability: "payable" },
 ] as const;
 
 /** afUSDC faucet — MockERC20.mint is public on testnet. */

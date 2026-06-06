@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
 import { isAddress } from "viem";
 import { TESTNET_DEPLOYMENT as DEPLOYMENT, type ProtocolKey } from "@/lib/testnet";
-import { allScoresAt, decideTarget, tickFor, type KeeperTickResult } from "@/lib/demo-score";
+import {
+  decideTarget,
+  MOVE_GAS_ESTIMATE,
+  type DecisionOverride,
+  type KeeperTickResult,
+} from "@/lib/demo-score";
 import { buildMove } from "@/lib/vault-calls";
-import { readVault, relayerAddress, signAndSubmit, withVaultLock } from "@/lib/keeper-signer";
+import {
+  ensureFloat,
+  gasPrice,
+  keeperByAddress,
+  readVault,
+  signAndSubmit,
+  withVaultLock,
+} from "@/lib/keeper-signer";
 
 // Holds the backend keys + submits a real tx — must run on Node, never cached.
 export const runtime = "nodejs";
@@ -11,8 +23,19 @@ export const dynamic = "force-dynamic";
 
 const KEYS = new Set<string>(DEPLOYMENT.protocols.map((p) => p.key));
 
+/** Validate the optional presenter override (demo controls) from the body. */
+function parseOverride(raw: unknown): DecisionOverride | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as { kind?: unknown; key?: unknown };
+  if (o.kind === "hold") return { kind: "hold" };
+  if (o.kind === "boost" && typeof o.key === "string" && KEYS.has(o.key)) {
+    return { kind: "boost", key: o.key as ProtocolKey };
+  }
+  return undefined;
+}
+
 export async function POST(request: Request) {
-  let body: { vault?: string; approved?: unknown };
+  let body: { vault?: string; approved?: unknown; override?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -26,43 +49,52 @@ export async function POST(request: Request) {
   const approved = (Array.isArray(body.approved) ? body.approved : []).filter(
     (k): k is ProtocolKey => typeof k === "string" && KEYS.has(k),
   );
+  const override = parseOverride(body.override);
 
   try {
     const result = await withVaultLock(vault, async (): Promise<KeeperTickResult> => {
-      const relayer = relayerAddress();
       const snap = await readVault(vault);
-      const tick = tickFor();
-      const scores = allScoresAt(tick);
+      // Resolve which pool keeper this vault is delegated to (its on-chain keeper
+      // must be one of ours), and submit from that key.
+      const keeper = keeperByAddress(snap.keeper);
 
-      if (snap.keeper.toLowerCase() !== relayer.toLowerCase()) {
-        return { moved: false, location: snap.location, tick, scores, reason: "not_delegated" };
+      if (!keeper) {
+        return { moved: false, location: snap.location, reason: "not_delegated" };
       }
       if (snap.activeAmount === BigInt(0)) {
-        return { moved: false, location: snap.location, tick, scores, reason: "no_funds" };
+        return { moved: false, location: snap.location, reason: "no_funds" };
       }
 
-      const target = decideTarget(snap.location, approved, tick);
+      const target = decideTarget(snap.location, approved, Date.now(), override);
       if (!target || target === snap.location) {
-        return {
-          moved: false,
-          location: snap.location,
-          tick,
-          scores,
-          reason: approved.length === 0 ? "no_approvals" : "stay",
-        };
+        const reason =
+          override?.kind === "hold"
+            ? "demo_hold"
+            : approved.length === 0
+              ? "no_approvals"
+              : "stay";
+        return { moved: false, location: snap.location, reason };
+      }
+
+      // Gas gate: the keeper never fronts uncovered gas. If the vault's own ETH
+      // reserve can't cover one move, skip submitting — the budget runs out
+      // gracefully and the UI prompts a top-up.
+      const cost = MOVE_GAS_ESTIMATE * (await gasPrice());
+      if (snap.vaultEth < cost) {
+        return { moved: false, location: snap.location, reason: "needs_gas" };
       }
 
       const calls = buildMove(vault, snap.location, target, snap.activeAmount);
-      const hash = await signAndSubmit(vault, calls);
+      // Keep this keeper's float topped up (gas-station) before it fronts the tx.
+      await ensureFloat(keeper.address);
+      const hash = await signAndSubmit(vault, calls, keeper);
       return {
         moved: true,
         location: target,
         from: snap.location,
         to: target,
         hash,
-        tick,
-        scores,
-        reason: "moved",
+        reason: override?.kind === "boost" ? "demo_boost" : "moved",
       };
     });
 

@@ -11,6 +11,7 @@ import { useVault } from "@/hooks/use-vault";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { FaucetCard } from "./faucet-card";
 import { VaultCard } from "./vault-card";
+import { GasCard } from "./gas-card";
 import { AllocationBoard } from "./allocation-board";
 
 export type VaultApi = ReturnType<typeof useVault>;
@@ -41,6 +42,8 @@ export function TestnetApp() {
               <VaultCard v={v} />
             </div>
 
+            {v.state.vault ? <GasCard v={v} /> : null}
+
             <AllocationBoard v={v} />
 
             <ActivityLog txs={v.txs} />
@@ -66,9 +69,10 @@ function Header() {
       </h1>
       <p className="text-muted-strong max-w-2xl">
         Mint test afUSDC, deposit it into your own vault, and approve the
-        protocols you trust — then ArbiFlow&apos;s backend scores them every ~25s
-        and moves, or deliberately holds, your funds. You can never move funds
-        yourself, only withdraw; every rebalance is a real transaction on
+        protocols you trust — then ArbiFlow&apos;s backend scores them every ~35s
+        and moves, or deliberately holds, your funds. Each move&apos;s gas is paid
+        from a small ETH reserve you fund in your own vault. You can never move
+        funds yourself, only withdraw; every rebalance is a real transaction on
         Arbitrum Sepolia.
       </p>
     </div>
@@ -130,8 +134,9 @@ function SignerNote() {
   return (
     <p className="text-[11px] text-muted leading-relaxed border-t border-border pt-4">
       Rebalances are decided and signed by ArbiFlow&apos;s backend — the keeper
-      key never reaches your browser — and submitted by the backend, which pays
-      the gas. It authorizes <em>where</em> funds may move, but the chain still
+      key never reaches your browser — and submitted by the backend keeper, which
+      fronts the gas and is reimbursed from the small ETH reserve you fund in your
+      own vault. It authorizes <em>where</em> funds may move, but the chain still
       enforces that only whitelisted protocols are touched and value can&apos;t
       drop, and only you can withdraw.
     </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, parseEther, parseUnits } from "viem";
 import { ExternalLink, Loader2, ShieldCheck, Vault } from "lucide-react";
 import { fmtUsdc } from "@/lib/format";
 import { arbiscanSepolia } from "@/lib/testnet";
@@ -10,6 +10,7 @@ import type { VaultApi } from "./testnet-app";
 export function VaultCard({ v }: { v: VaultApi }) {
   const { state } = v;
   const [amount, setAmount] = useState("");
+  const [gasAmount, setGasAmount] = useState("0.02");
 
   const creating = v.pending === "create";
   const depositing = v.pending === "deposit";
@@ -26,6 +27,13 @@ export function VaultCard({ v }: { v: VaultApi }) {
     parsed = amount ? parseUnits(amount, 6) : BigInt(0);
   } catch {
     parsed = BigInt(0);
+  }
+
+  let gasParsed = BigInt(0);
+  try {
+    gasParsed = gasAmount && gasAmount !== "0" ? parseEther(gasAmount) : BigInt(0);
+  } catch {
+    gasParsed = BigInt(0);
   }
 
   return (
@@ -120,17 +128,43 @@ export function VaultCard({ v }: { v: VaultApi }) {
               />
               <button
                 type="button"
-                onClick={() => v.deposit(parsed)}
+                onClick={() => v.deposit(parsed, gasParsed)}
                 disabled={!canDeposit}
                 className="btn-primary rounded-md px-4 py-2 text-sm font-medium text-white inline-flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {depositing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {depositing ? "…" : "Deposit"}
+                {depositing ? "…" : gasParsed > BigInt(0) ? "Deposit + gas" : "Deposit"}
               </button>
             </div>
             {amountNum > walletNum ? (
               <div className="text-[11px] text-rose">exceeds wallet balance</div>
             ) : null}
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+                + gas reserve
+              </span>
+              <div className="flex items-center gap-1.5">
+                {(["0", "0.01", "0.02"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGasAmount(g)}
+                    className={`rounded-md border px-2 py-1 text-[11px] font-mono tabular transition-colors ${
+                      gasAmount === g
+                        ? "border-accent/50 bg-accent/10 text-foreground"
+                        : "border-border text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {g === "0" ? "off" : g}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[10px] text-muted leading-relaxed">
+              Optional ETH gas reserve — your ETH, withdrawable any time, spent
+              only to reimburse the keeper&apos;s gas per rebalance.
+            </p>
           </div>
 
           {state.activeAmount > BigInt(0) ? (

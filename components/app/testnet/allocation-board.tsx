@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { LayoutGroup, motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Loader2, Pause, Zap } from "lucide-react";
 import { fmtUsdc } from "@/lib/format";
 import { TESTNET_DEPLOYMENT as DEPLOYMENT, type ProtocolKey } from "@/lib/testnet";
 import {
   FACTORS,
-  allScoresAt,
-  msUntilNextTick,
-  tickFor,
+  allDisplayScoresAt,
+  decisionLeader,
+  msUntilNextDecision,
   type ProtocolScore,
 } from "@/lib/demo-score";
 import type { VaultApi } from "./testnet-app";
@@ -26,26 +26,25 @@ const labelOf = (key: ProtocolKey) =>
   DEPLOYMENT.protocols.find((p) => p.key === key)?.label ?? key;
 
 export function AllocationBoard({ v }: { v: VaultApi }) {
-  const { state, approved, decision } = v;
+  const { state, approved } = v;
   const hasFunds = state.activeAmount > BigInt(0);
 
-  // A 1s clock drives the countdown and advances the displayed scores at each
-  // tick boundary. Scores are deterministic per tick, so this matches the
-  // server's decision basis.
+  // A ~550ms clock drives the live (jittery) display scores and the countdown.
+  // Decisions run on the slow signal only, so they never flip on this jitter.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), 550);
     return () => clearInterval(id);
   }, []);
 
-  const tick = tickFor(now);
-  const scores: ProtocolScore[] =
-    decision && decision.tick === tick ? decision.scores : allScoresAt(tick);
+  const scores: ProtocolScore[] = allDisplayScoresAt(now);
   const byKey = new Map(scores.map((s) => [s.key, s]));
-  const leaderApproved = scores.find((s) => approved.includes(s.key));
-  const secondsLeft = Math.ceil(msUntilNextTick(now) / 1000);
+  const leader = decisionLeader(approved, now);
+  const secondsLeft = Math.ceil(msUntilNextDecision(now) / 1000);
+  const showCountdown = v.delegated && hasFunds && approved.length > 0 && !v.needsGas;
 
-  const status = statusLine(v, leaderApproved?.key);
+  const moving = v.pending === "demoMove";
+  const holding = v.pending === "demoHold";
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6 space-y-5">
@@ -54,9 +53,12 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
           <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
             03 · allow-list · ArbiFlow rebalances across what you approve
           </div>
-          <p className="text-sm text-muted-strong">{status}</p>
+          <p className="text-sm text-muted-strong">{statusLine(v, leader?.key)}</p>
+          {leader && v.delegated && hasFunds && !v.needsGas ? (
+            <p className="text-[11px] text-muted mt-1">Why: {leader.rationale}</p>
+          ) : null}
         </div>
-        {v.delegated && hasFunds && approved.length > 0 ? (
+        {showCountdown ? (
           <div className="text-right">
             <div className="font-mono tabular text-2xl font-semibold text-gold leading-none">
               {secondsLeft}s
@@ -79,16 +81,16 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
           {DEPLOYMENT.protocols.map((p) => {
             const key = p.key;
             const s = byKey.get(key)!;
-            const holding = state.location === key;
+            const holdingHere = state.location === key;
             const isApproved = approved.includes(key);
-            const isLeader = leaderApproved?.key === key && isApproved;
+            const isLeader = leader?.key === key;
             const chip = CHIP[key];
 
             return (
               <div
                 key={key}
                 className={`relative rounded-lg border p-4 flex flex-col gap-3 transition-colors ${
-                  holding
+                  holdingHere
                     ? "border-gold/60 bg-gold/5"
                     : isApproved
                       ? "border-border-strong bg-surface-2/40"
@@ -150,7 +152,7 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
 
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <div className="h-6 flex items-center">
-                    {holding ? (
+                    {holdingHere ? (
                       <motion.div
                         layoutId="funds"
                         transition={{ type: "spring", stiffness: 220, damping: 26 }}
@@ -182,20 +184,50 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
           })}
         </div>
       </LayoutGroup>
+
+      {v.delegated && hasFunds ? (
+        <div className="flex items-center justify-between gap-3 flex-wrap border-t border-border pt-4">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+            demo control · presenter aid
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => v.demoMove()}
+              disabled={!!v.pending}
+              className="btn-ghost rounded-md px-3 py-1.5 text-xs font-medium text-foreground inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {moving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+              Demo: move now
+            </button>
+            <button
+              type="button"
+              onClick={() => v.demoHold()}
+              disabled={!!v.pending}
+              className="btn-ghost rounded-md px-3 py-1.5 text-xs font-medium text-foreground inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {holding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Pause className="w-3 h-3" />}
+              Demo: hold
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function statusLine(v: VaultApi, leaderKey?: ProtocolKey): string {
-  const { state, approved, delegated, decision } = v;
+  const { state, approved, delegated, decision, needsGas } = v;
   if (!delegated) return "Delegate your vault to ArbiFlow to start auto-rebalancing.";
   if (state.activeAmount <= BigInt(0)) return "Deposit afUSDC, then approve protocols to begin.";
   if (approved.length === 0) return "Approve at least one protocol — ArbiFlow won't move funds until you do.";
-  if (decision?.reason === "moved" && decision.to)
+  if (needsGas) return "Gas reserve can't cover the next move — top up gas to resume rebalancing.";
+  if (decision?.reason === "demo_hold") return "Demo: holding — funds stay put this round.";
+  if ((decision?.reason === "moved" || decision?.reason === "demo_boost") && decision.to)
     return `ArbiFlow moved your funds into ${labelOf(decision.to)}.`;
   if (state.location !== "idle" && state.location !== "empty")
     return leaderKey && leaderKey === state.location
       ? `Holding in ${labelOf(state.location as ProtocolKey)} — still your best approved score.`
       : `Holding in ${labelOf(state.location as ProtocolKey)}.`;
-  return "Evaluating your approved protocols every ~25s…";
+  return "Evaluating your approved protocols every ~35s…";
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAddress } from "viem";
 import { buildMove, type FundLocation } from "@/lib/vault-calls";
-import { readVault, relayerAddress, signAndSubmit, withVaultLock } from "@/lib/keeper-signer";
+import { ensureFloat, keeperByAddress, readVault, signAndSubmit, withVaultLock } from "@/lib/keeper-signer";
 
 // Backs the user's withdraw: the keeper redeems any deployed position back to
 // idle USDC so the owner can then withdraw it (the owner is no longer keeper, so
@@ -32,10 +32,10 @@ export async function POST(request: Request) {
 
   try {
     const result = await withVaultLock(vault, async (): Promise<RedeemResponse> => {
-      const relayer = relayerAddress();
       const snap = await readVault(vault);
+      const keeper = keeperByAddress(snap.keeper);
 
-      if (snap.keeper.toLowerCase() !== relayer.toLowerCase()) {
+      if (!keeper) {
         return { redeemed: false, location: snap.location, reason: "not_delegated" };
       }
       if (snap.location === "idle" || snap.location === "empty" || snap.activeAmount === BigInt(0)) {
@@ -43,7 +43,8 @@ export async function POST(request: Request) {
       }
 
       const calls = buildMove(vault, snap.location, "idle", snap.activeAmount);
-      const hash = await signAndSubmit(vault, calls);
+      await ensureFloat(keeper.address);
+      const hash = await signAndSubmit(vault, calls, keeper);
       return { redeemed: true, hash, from: snap.location, location: "idle", reason: "redeemed" };
     });
 
