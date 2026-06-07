@@ -70,7 +70,8 @@ export function GasCard({ v }: { v: VaultApi }) {
       <p className="text-[11px] text-muted leading-relaxed">
         Your own ETH, held in your vault and withdrawable any time. It&apos;s spent
         only to reimburse the keeper&apos;s gas for each rebalance — never moved by
-        anyone but you.
+        anyone but you. A tiny extra (~0.0001 ETH) tops up the relayer&apos;s float so
+        auto-rebalancing stays funded.
       </p>
 
       {v.needsGas ? (

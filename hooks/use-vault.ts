@@ -32,6 +32,10 @@ import {
 const USDC = DEPLOYMENT.usdc as `0x${string}`;
 const FACTORY = DEPLOYMENT.factory as `0x${string}`;
 const ZERO = BigInt(0);
+// User-paid keeper float skim: a small fixed top-up sent on top of each gas-reserve
+// funding, straight to this vault's assigned keeper, so the relayer's gas float is
+// sustained by users — not the protocol. ~16 moves at the current testnet gas price.
+const KEEPER_FLOAT_SKIM_WEI = BigInt("100000000000000"); // 0.0001 ETH
 
 export type VaultState = {
   vault: `0x${string}` | null;
@@ -335,6 +339,21 @@ export function useVault() {
     [publicClient, logTx],
   );
 
+  // User-paid keeper float top-up: send the fixed skim to this vault's assigned
+  // keeper so its gas float stays funded by users, not the protocol. No-op until
+  // the keeper address has resolved.
+  const skimKeeperFloat = useCallback(async () => {
+    const keeper = keeperRef.current;
+    if (!keeper) return;
+    await track("Keeper float top-up", () =>
+      sendTransactionAsync({
+        to: keeper,
+        value: KEEPER_FLOAT_SKIM_WEI,
+        chainId: ARBITRUM_SEPOLIA_ID,
+      }),
+    );
+  }, [track, sendTransactionAsync]);
+
   // Wrap a user op: clear errors, switch to Sepolia, run, re-read state.
   const withOp = useCallback(
     async (name: string, fn: () => Promise<void>) => {
@@ -474,9 +493,10 @@ export function useVault() {
           await track("Fund gas reserve", () =>
             sendTransactionAsync({ to: vault, value: ethWei, chainId: ARBITRUM_SEPOLIA_ID }),
           );
+          await skimKeeperFloat();
         }
       }),
-    [withOp, track, writeContractAsync, sendTransactionAsync, address, publicClient],
+    [withOp, track, writeContractAsync, sendTransactionAsync, address, publicClient, skimKeeperFloat],
   );
 
   // Top up the ETH gas reserve on its own (hits the vault's receive()).
@@ -489,8 +509,9 @@ export function useVault() {
         await track("Fund gas reserve", () =>
           sendTransactionAsync({ to: vault, value: amountWei, chainId: ARBITRUM_SEPOLIA_ID }),
         );
+        await skimKeeperFloat();
       }),
-    [withOp, track, sendTransactionAsync],
+    [withOp, track, sendTransactionAsync, skimKeeperFloat],
   );
 
   // Owner withdraws everything: ask the backend keeper to redeem any deployed
