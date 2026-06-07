@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { BaseError, ContractFunctionRevertedError, erc20Abi, zeroAddress } from "viem";
+import { BaseError, ContractFunctionRevertedError, erc20Abi, parseGwei, zeroAddress } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import {
   useAccount,
@@ -137,9 +137,30 @@ export function useVault() {
   const { address } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
-  const { writeContractAsync } = useWriteContract();
-  const { sendTransactionAsync } = useSendTransaction();
+  const { writeContractAsync: writeRaw } = useWriteContract();
+  const { sendTransactionAsync: sendRaw } = useSendTransaction();
   const publicClient = usePublicClient({ chainId: ARBITRUM_SEPOLIA_ID });
+
+  // Arbitrum's base fee micro-ticks between fee estimate and submit; quote maxFee from
+  // the *current* base fee with generous headroom so the sequencer can't reject the tx
+  // with "max fee per gas less than block base fee". You pay the base fee (+ tip), not
+  // maxFee, so the headroom is free. Wrapping the two mutate fns applies it to every
+  // user-signed send without touching the call sites.
+  const txFees = useCallback(async () => {
+    if (!publicClient) return {};
+    const gp = await publicClient.getGasPrice();
+    return { maxFeePerGas: gp * BigInt(3), maxPriorityFeePerGas: parseGwei("0.001") };
+  }, [publicClient]);
+  const writeContractAsync = useCallback(
+    async (p: Parameters<typeof writeRaw>[0]) =>
+      writeRaw({ ...p, ...(await txFees()) } as Parameters<typeof writeRaw>[0]),
+    [writeRaw, txFees],
+  );
+  const sendTransactionAsync = useCallback(
+    async (p: Parameters<typeof sendRaw>[0]) =>
+      sendRaw({ ...p, ...(await txFees()) } as Parameters<typeof sendRaw>[0]),
+    [sendRaw, txFees],
+  );
 
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
