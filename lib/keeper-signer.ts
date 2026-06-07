@@ -33,7 +33,7 @@ import {
 } from "viem/accounts";
 import { arbitrumSepolia } from "viem/chains";
 import { TESTNET_DEPLOYMENT as DEPLOYMENT, type ProtocolKey } from "./testnet";
-import { VAULT_ABI } from "./testnet-abi";
+import { FACTORY_ABI, VAULT_ABI } from "./testnet-abi";
 import { allocationTypedData, type VaultCall } from "./testnet-sign";
 import type { FundLocation } from "./vault-calls";
 
@@ -265,11 +265,22 @@ export async function signAndSubmit(
   keeper: KeeperAccount,
 ): Promise<`0x${string}`> {
   const { publicClient, walletClient, signer } = ctx();
-  const nonce = (await publicClient.readContract({
-    address: vault,
-    abi: VAULT_ABI,
-    functionName: "nonce",
-  })) as bigint;
+  const [nonce, expectedSigner] = await Promise.all([
+    publicClient.readContract({ address: vault, abi: VAULT_ABI, functionName: "nonce" }) as Promise<bigint>,
+    publicClient.readContract({
+      address: DEPLOYMENT.factory as `0x${string}`,
+      abi: FACTORY_ABI,
+      functionName: "backendSigner",
+    }) as Promise<`0x${string}`>,
+  ]);
+  // Fail fast (and legibly) if the backend key won't match the on-chain backendSigner —
+  // otherwise every rebalance just reverts with an opaque "bad signature".
+  if (expectedSigner.toLowerCase() !== signer.address.toLowerCase()) {
+    throw new Error(
+      `keeper signs with ${signer.address} but factory.backendSigner is ${expectedSigner} — ` +
+        `unset BACKEND_PK to use the demo key (or set it to that key), then redeploy`,
+    );
+  }
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
   const signature = await signer.signTypedData(
     allocationTypedData({ vault, chainId: arbitrumSepolia.id, calls, nonce, deadline }),

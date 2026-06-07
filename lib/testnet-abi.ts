@@ -24,6 +24,13 @@ export const FACTORY_ABI = [
     inputs: [{ name: "user", type: "address" }],
     outputs: [{ type: "address" }],
   },
+  {
+    type: "function",
+    name: "backendSigner",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
 ] as const;
 
 export const VAULT_ABI = [
