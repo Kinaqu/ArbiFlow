@@ -222,6 +222,10 @@ function statusLine(v: VaultApi, leaderKey?: ProtocolKey): string {
   if (state.activeAmount <= BigInt(0)) return "Deposit afUSDC, then approve protocols to begin.";
   if (approved.length === 0) return "Approve at least one protocol — ArbiFlow won't move funds until you do.";
   if (needsGas) return "Gas reserve can't cover the next move — top up gas to resume rebalancing.";
+  if (decision?.reason === "needs_keeper_float")
+    return "Relayer gas float is low — fund gas to top up the keeper.";
+  if (decision?.reason === "keeper_error")
+    return `Keeper error: ${decision.message ?? "rebalance failed — will retry."}`;
   if (decision?.reason === "demo_hold") return "Demo: holding — funds stay put this round.";
   if ((decision?.reason === "moved" || decision?.reason === "demo_boost") && decision.to)
     return `ArbiFlow moved your funds into ${labelOf(decision.to)}.`;

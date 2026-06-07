@@ -56,6 +56,8 @@ export type KeeperTickResult = {
   from?: FundLocation;
   to?: ProtocolKey;
   hash?: `0x${string}`;
+  /** Set on a "keeper_error" — the swallowed-but-surfaced failure message. */
+  message?: string;
   reason:
     | "moved"
     | "stay"
@@ -63,6 +65,8 @@ export type KeeperTickResult = {
     | "no_approvals"
     | "not_delegated"
     | "needs_gas"
+    | "needs_keeper_float"
+    | "keeper_error"
     | "demo_boost"
     | "demo_hold";
 };

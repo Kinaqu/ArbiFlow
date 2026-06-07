@@ -91,8 +91,9 @@ export function VaultCard({ v }: { v: VaultApi }) {
           ) : (
             <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 space-y-2">
               <p className="text-[11px] text-muted-strong">
-                This vault isn&apos;t delegated yet, so ArbiFlow can&apos;t
-                rebalance it. Grant permission to start.
+                {v.keeperDrifted
+                  ? "Your keeper assignment changed (the relayer pool was resized). Re-delegate to resume auto-rebalancing."
+                  : "This vault isn't delegated yet, so ArbiFlow can't rebalance it. Grant permission to start."}
               </p>
               <button
                 type="button"
@@ -101,7 +102,11 @@ export function VaultCard({ v }: { v: VaultApi }) {
                 className="btn-primary w-full rounded-md py-2 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {delegating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {delegating ? "Delegating…" : "Delegate to ArbiFlow"}
+                {delegating
+                  ? "Delegating…"
+                  : v.keeperDrifted
+                    ? "Re-delegate to ArbiFlow"
+                    : "Delegate to ArbiFlow"}
               </button>
             </div>
           )}

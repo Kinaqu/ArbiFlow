@@ -11,6 +11,7 @@ import { buildMove } from "@/lib/vault-calls";
 import {
   ensureFloat,
   gasPrice,
+  keeperBalance,
   keeperByAddress,
   readVault,
   signAndSubmit,
@@ -82,6 +83,14 @@ export async function POST(request: Request) {
       const cost = MOVE_GAS_ESTIMATE * (await gasPrice());
       if (snap.vaultEth < cost) {
         return { moved: false, location: snap.location, reason: "needs_gas" };
+      }
+      // Keeper-float gate: the keeper EOA fronts the tx's gas, then the vault
+      // reimburses it. If its float can't cover one move, don't submit (it would
+      // just revert for lack of funds) — surface a reason so the UI prompts a gas
+      // top-up, whose skim refills the keeper. (ensureFloat below is a no-op while
+      // the protocol funder is off; the float is sustained by users.)
+      if ((await keeperBalance(keeper.address)) < cost) {
+        return { moved: false, location: snap.location, reason: "needs_keeper_float" };
       }
 
       const calls = buildMove(vault, snap.location, target, snap.activeAmount);

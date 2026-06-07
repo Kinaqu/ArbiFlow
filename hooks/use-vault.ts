@@ -254,6 +254,14 @@ export function useVault() {
     !!keeperAddress &&
     !!state.keeper &&
     state.keeper.toLowerCase() === keeperAddress.toLowerCase();
+  // Delegated to *some* keeper, but not the one we'd assign now (e.g. the pool was
+  // resized) — it reads as "not delegated". Flagged so the UI prompts a re-delegate.
+  const keeperDrifted =
+    !!state.vault &&
+    !!keeperAddress &&
+    !!state.keeper &&
+    state.keeper !== zeroAddress &&
+    !delegated;
 
   // --- user-managed allow-list (which protocols ArbiFlow may route to) --------
   const approved = useSyncExternalStore(
@@ -339,21 +347,6 @@ export function useVault() {
     [publicClient, logTx],
   );
 
-  // User-paid keeper float top-up: send the fixed skim to this vault's assigned
-  // keeper so its gas float stays funded by users, not the protocol. No-op until
-  // the keeper address has resolved.
-  const skimKeeperFloat = useCallback(async () => {
-    const keeper = keeperRef.current;
-    if (!keeper) return;
-    await track("Keeper float top-up", () =>
-      sendTransactionAsync({
-        to: keeper,
-        value: KEEPER_FLOAT_SKIM_WEI,
-        chainId: ARBITRUM_SEPOLIA_ID,
-      }),
-    );
-  }, [track, sendTransactionAsync]);
-
   // Wrap a user op: clear errors, switch to Sepolia, run, re-read state.
   const withOp = useCallback(
     async (name: string, fn: () => Promise<void>) => {
@@ -380,6 +373,23 @@ export function useVault() {
     if (!a) throw new Error("Keeper backend unavailable.");
     return a;
   }, []);
+
+  // User-paid keeper float top-up: send the fixed skim to this vault's assigned
+  // keeper so its gas float stays funded by users, not the protocol. Resolves the
+  // keeper on demand, so it never silently skips before the address has loaded —
+  // a backend outage surfaces via withOp instead of vanishing.
+  const skimKeeperFloat = useCallback(async () => {
+    const vault = stateRef.current.vault;
+    if (!vault) return;
+    const keeper = keeperRef.current ?? (await resolveKeeper(vault));
+    await track("Keeper float top-up", () =>
+      sendTransactionAsync({
+        to: keeper,
+        value: KEEPER_FLOAT_SKIM_WEI,
+        chainId: ARBITRUM_SEPOLIA_ID,
+      }),
+    );
+  }, [track, sendTransactionAsync, resolveKeeper]);
 
   // --- user actions ----------------------------------------------------------
   const faucet = useCallback(
@@ -624,7 +634,16 @@ export function useVault() {
           ...(override ? { override } : {}),
         }),
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as { message?: string } | null;
+        setDecision({
+          moved: false,
+          location: stateRef.current.location,
+          reason: "keeper_error",
+          message: err?.message,
+        });
+        return null;
+      }
       const data = (await res.json()) as KeeperTickResult;
       setDecision(data);
       if (data.moved && data.hash && data.to) {
@@ -717,6 +736,7 @@ export function useVault() {
     onSepolia,
     keeperAddress,
     delegated,
+    keeperDrifted,
     approved,
     decision,
     gasPrice,

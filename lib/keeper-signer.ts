@@ -128,6 +128,11 @@ export function gasPrice(): Promise<bigint> {
   return ctx().publicClient.getGasPrice();
 }
 
+/** A keeper EOA's ETH float (wei) — checked before it fronts a rebalance's gas. */
+export function keeperBalance(addr: `0x${string}`): Promise<bigint> {
+  return ctx().publicClient.getBalance({ address: addr });
+}
+
 export type VaultSnapshot = {
   keeper: `0x${string}`;
   nonce: bigint;
