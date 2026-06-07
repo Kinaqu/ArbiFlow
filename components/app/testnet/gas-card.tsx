@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatEther, parseEther } from "viem";
-import { AlertTriangle, Fuel, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import type { VaultApi } from "./testnet-app";
 
 const PRESETS = ["0.01", "0.02", "0.05"] as const;
@@ -37,11 +37,8 @@ export function GasCard({ v }: { v: VaultApi }) {
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-          02b · gas reserve
-        </div>
-        <Fuel className="w-4 h-4 text-accent" />
+      <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
+        02b · gas reserve
       </div>
 
       <div className="flex items-end justify-between gap-4">
@@ -68,10 +65,8 @@ export function GasCard({ v }: { v: VaultApi }) {
       </div>
 
       <p className="text-[11px] text-muted leading-relaxed">
-        Your own ETH, held in your vault and withdrawable any time. It&apos;s spent
-        only to reimburse the keeper&apos;s gas for each rebalance — never moved by
-        anyone but you. A tiny extra (~0.0001 ETH) tops up the relayer&apos;s float so
-        auto-rebalancing stays funded.
+        Your ETH, withdrawable any time — spent only to reimburse the keeper&apos;s
+        gas per rebalance (plus a tiny relayer top-up so auto-rebalancing stays funded).
       </p>
 
       {v.needsGas ? (

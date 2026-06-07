@@ -51,7 +51,7 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
-            03 · allow-list · ArbiFlow rebalances across what you approve
+            03 · allow-list
           </div>
           <p className="text-sm text-muted-strong">{statusLine(v, leader?.key)}</p>
           {leader && v.delegated && hasFunds && !v.needsGas ? (
@@ -71,9 +71,8 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
       </div>
 
       <p className="text-[11px] text-muted leading-relaxed">
-        Demo protocols — mock stand-ins on Arbitrum Sepolia, <em>not</em> the real
-        Aave / Compound / Morpho and not affiliated with them. Approve the ones
-        you trust; ArbiFlow only ever routes funds into your allow-list.
+        Mock demo protocols — <em>not</em> the real Aave / Compound / Morpho. Approve
+        the ones you trust; ArbiFlow only routes into your allow-list.
       </p>
 
       <LayoutGroup>
@@ -94,7 +93,7 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
                     ? "border-gold/60 bg-gold/5"
                     : isApproved
                       ? "border-border-strong bg-surface-2/40"
-                      : "border-border bg-surface-2/20 opacity-60"
+                      : "border-border bg-surface-2/20"
                 }`}
               >
                 {isLeader ? (
@@ -169,10 +168,11 @@ export function AllocationBoard({ v }: { v: VaultApi }) {
                     onClick={() => (isApproved ? v.revoke(key) : v.approve(key))}
                     disabled={!!v.pending}
                     aria-pressed={isApproved}
-                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                    title={isApproved ? "Click to revoke" : "Approve this protocol"}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       isApproved
                         ? "text-mint border border-mint/40 bg-mint/10 hover:bg-mint/15"
-                        : "btn-ghost text-muted-strong"
+                        : "bg-accent text-white hover:bg-accent-hover"
                     }`}
                   >
                     {isApproved ? <Check className="w-3 h-3" /> : null}

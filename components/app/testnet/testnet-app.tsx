@@ -68,12 +68,8 @@ function Header() {
         <span className="gradient-text-gold">delegation vault</span>, live
       </h1>
       <p className="text-muted-strong max-w-2xl">
-        Mint test afUSDC, deposit it into your own vault, and approve the
-        protocols you trust — then ArbiFlow&apos;s backend scores them every ~35s
-        and moves, or deliberately holds, your funds. Each move&apos;s gas is paid
-        from a small ETH reserve you fund in your own vault. You can never move
-        funds yourself, only withdraw; every rebalance is a real transaction on
-        Arbitrum Sepolia.
+        Mint afUSDC → deposit to your vault → approve the protocols you trust.
+        ArbiFlow rebalances across them every ~35s; only you can withdraw.
       </p>
     </div>
   );
@@ -83,8 +79,8 @@ function ConnectPrompt() {
   return (
     <div className="rounded-xl border border-border bg-surface p-8 flex flex-col items-center text-center gap-4">
       <p className="text-muted-strong max-w-sm">
-        Connect a wallet to try the vault on Arbitrum Sepolia. You&apos;ll need a
-        little Sepolia ETH for gas — grab some from a{" "}
+        Connect a wallet on Arbitrum Sepolia — you&apos;ll need a little Sepolia ETH
+        for gas from a{" "}
         <a
           href="https://www.alchemy.com/faucets/arbitrum-sepolia"
           target="_blank"
@@ -133,12 +129,8 @@ function ActivityLog({ txs }: { txs: VaultApi["txs"] }) {
 function SignerNote() {
   return (
     <p className="text-[11px] text-muted leading-relaxed border-t border-border pt-4">
-      Rebalances are decided and signed by ArbiFlow&apos;s backend — the keeper
-      key never reaches your browser — and submitted by the backend keeper, which
-      fronts the gas and is reimbursed from the small ETH reserve you fund in your
-      own vault. It authorizes <em>where</em> funds may move, but the chain still
-      enforces that only whitelisted protocols are touched and value can&apos;t
-      drop, and only you can withdraw.
+      Rebalances are signed by ArbiFlow&apos;s backend and submitted by its keeper;
+      the chain enforces whitelisted-only moves and owner-only withdrawals.
     </p>
   );
 }

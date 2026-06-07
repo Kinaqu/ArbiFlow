@@ -1,7 +1,7 @@
 "use client";
 
 import { parseUnits } from "viem";
-import { Coins, ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { fmtUsdc } from "@/lib/format";
 import {
   TESTNET_DEPLOYMENT as DEPLOYMENT,
@@ -15,11 +15,8 @@ export function FaucetCard({ v }: { v: VaultApi }) {
   const busy = v.pending === "faucet";
   return (
     <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-          01 · faucet
-        </div>
-        <Coins className="w-4 h-4 text-gold" />
+      <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
+        01 · faucet
       </div>
 
       <div>
