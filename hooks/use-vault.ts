@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { erc20Abi, zeroAddress } from "viem";
+import { BaseError, ContractFunctionRevertedError, erc20Abi, zeroAddress } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import {
   useAccount,
@@ -66,8 +66,19 @@ const EMPTY: VaultState = {
   activeAmount: ZERO,
 };
 
-const short = (e: unknown) =>
-  (e instanceof Error ? e.message : "Transaction failed").split("\n")[0];
+// Pull the human-readable reason out of a (often deeply nested) viem error instead
+// of just the generic first line, so a failed tx shows *why* — the revert reason,
+// chain mismatch, rejected request, insufficient funds, RPC error — not "reverted".
+const short = (e: unknown): string => {
+  if (e instanceof BaseError) {
+    const revert = e.walk((err) => err instanceof ContractFunctionRevertedError);
+    if (revert instanceof ContractFunctionRevertedError) {
+      return revert.reason ?? revert.data?.errorName ?? revert.shortMessage;
+    }
+    return e.shortMessage;
+  }
+  return (e instanceof Error ? e.message : "Transaction failed").split("\n")[0];
+};
 
 const isKey = (k: unknown): k is ProtocolKey =>
   typeof k === "string" && DEPLOYMENT.protocols.some((p) => p.key === k);
@@ -357,6 +368,7 @@ export function useVault() {
         await fn();
         await refresh();
       } catch (e) {
+        console.error(e); // full detail in the console; the banner shows the reason
         setError(short(e));
       } finally {
         setPending(null);
