@@ -52,10 +52,18 @@ contract DelegationVault is Initializable, ReentrancyGuard {
     bytes32 private constant _NAME_HASH = keccak256(bytes("ArbiFlowDelegationVault"));
     bytes32 private constant _VERSION_HASH = keccak256(bytes("1"));
 
+    /// @dev Gas added to the metered rebalance region (base tx + calldata + the
+    /// reimburse path itself) so the keeper is reimbursed roughly whole, not just
+    /// for the execution gas that `gasleft()` can see.
+    uint256 private constant _GAS_OVERHEAD = 40_000;
+
     event Deposited(address indexed token, address indexed from, uint256 amount);
     event Withdrawn(address indexed token, address indexed to, uint256 amount);
     event KeeperSet(address indexed keeper);
     event Rebalanced(uint256 indexed nonce, uint256 preValue, uint256 postValue, uint256 callCount);
+    event GasFunded(address indexed from, uint256 amount);
+    event GasReimbursed(address indexed keeper, uint256 amount);
+    event EthWithdrawn(address indexed to, uint256 amount);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -71,6 +79,14 @@ contract DelegationVault is Initializable, ReentrancyGuard {
         require(owner_ != address(0), "zero owner");
         owner = owner_;
         config = IVaultConfig(config_);
+    }
+
+    /// @notice Fund this vault's ETH gas reserve. The ETH belongs to the owner —
+    /// withdrawable any time via `withdrawEth` / `emergencyWithdraw` — and is
+    /// spent only to reimburse the keeper's gas on each rebalance. Held per-vault,
+    /// so it is provably the owner's and never commingled.
+    receive() external payable {
+        emit GasFunded(msg.sender, msg.value);
     }
 
     /// @notice Set or revoke (set to address(0)) the keeper.
@@ -94,6 +110,14 @@ contract DelegationVault is Initializable, ReentrancyGuard {
         emit Withdrawn(token, to, amount);
     }
 
+    /// @notice Owner reclaims `amount` of the vault's unused gas-reserve ETH to `to`.
+    function withdrawEth(uint256 amount, address to) external onlyOwner nonReentrant {
+        require(to != address(0), "zero to");
+        (bool ok,) = payable(to).call{value: amount}("");
+        require(ok, "eth send failed");
+        emit EthWithdrawn(to, amount);
+    }
+
     /// @notice Owner sweeps the full balance of each listed token to `to`. The
     /// non-custodial escape hatch: funds are never locked away from the owner,
     /// even if the keeper/backend is offline or misbehaving.
@@ -106,6 +130,13 @@ contract DelegationVault is Initializable, ReentrancyGuard {
                 emit Withdrawn(tokens[i], to, bal);
             }
         }
+        // Also return any leftover gas-reserve ETH (best-effort, so a rejecting
+        // `to` can't strand the swept tokens).
+        uint256 ethBal = address(this).balance;
+        if (ethBal > 0) {
+            (bool ok,) = payable(to).call{value: ethBal}("");
+            if (ok) emit EthWithdrawn(to, ethBal);
+        }
     }
 
     /// @notice Keeper entrypoint. Executes a backend-signed batch of calls, each
@@ -114,6 +145,7 @@ contract DelegationVault is Initializable, ReentrancyGuard {
     /// @param deadline  Unix time after which the signature is invalid.
     /// @param signature Backend EIP-712 signature over Allocation(callsHash, nonce, deadline).
     function rebalance(Call[] calldata calls, uint256 deadline, bytes calldata signature) external nonReentrant {
+        uint256 startGas = gasleft();
         require(msg.sender == keeper && keeper != address(0), "not keeper");
         require(block.timestamp <= deadline, "expired");
 
@@ -146,6 +178,23 @@ contract DelegationVault is Initializable, ReentrancyGuard {
         require(postValue >= preValue - (preValue * config.maxSlippageBps()) / 10_000, "value dropped");
 
         emit Rebalanced(used, preValue, postValue, calls.length);
+
+        // Runs last, after every state change, still inside nonReentrant.
+        _reimburse(startGas);
+    }
+
+    /// @dev Reimburse the keeper (msg.sender) for the gas this rebalance burned,
+    /// paid from the vault's own ETH reserve and capped at it — so it can never
+    /// overpay or revert for lack of ETH. ETH is not a priced asset, so this does
+    /// not affect the USD value invariant above.
+    function _reimburse(uint256 startGas) private {
+        uint256 spent = (startGas - gasleft() + _GAS_OVERHEAD) * tx.gasprice;
+        uint256 bal = address(this).balance;
+        uint256 pay = spent > bal ? bal : spent;
+        if (pay > 0) {
+            (bool ok,) = payable(msg.sender).call{value: pay}("");
+            if (ok) emit GasReimbursed(msg.sender, pay);
+        }
     }
 
     /// @dev Sum of vault holdings across the admin-priced asset set, in 1e18 USD.

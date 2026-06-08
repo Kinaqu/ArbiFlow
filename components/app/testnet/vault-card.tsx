@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { formatUnits, parseUnits } from "viem";
-import { ExternalLink, Loader2, ShieldCheck, Vault } from "lucide-react";
+import { formatUnits, parseEther, parseUnits } from "viem";
+import { ExternalLink, Loader2, ShieldCheck } from "lucide-react";
 import { fmtUsdc } from "@/lib/format";
 import { arbiscanSepolia } from "@/lib/testnet";
 import type { VaultApi } from "./testnet-app";
@@ -10,6 +10,7 @@ import type { VaultApi } from "./testnet-app";
 export function VaultCard({ v }: { v: VaultApi }) {
   const { state } = v;
   const [amount, setAmount] = useState("");
+  const [gasAmount, setGasAmount] = useState("0.02");
 
   const creating = v.pending === "create";
   const depositing = v.pending === "deposit";
@@ -28,21 +29,24 @@ export function VaultCard({ v }: { v: VaultApi }) {
     parsed = BigInt(0);
   }
 
+  let gasParsed = BigInt(0);
+  try {
+    gasParsed = gasAmount && gasAmount !== "0" ? parseEther(gasAmount) : BigInt(0);
+  } catch {
+    gasParsed = BigInt(0);
+  }
+
   return (
     <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-          02 · your vault
-        </div>
-        <Vault className="w-4 h-4 text-accent" />
+      <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
+        02 · your vault
       </div>
 
       {!state.vault ? (
         <>
           <p className="text-sm text-muted-strong">
-            Deploy your own non-custodial vault clone, delegated to ArbiFlow. The
-            backend becomes its keeper — it can rebalance across the protocols you
-            approve, but can never withdraw. Only you can take funds out.
+            Your own vault clone — ArbiFlow can rebalance it across approved
+            protocols, but only you can withdraw.
           </p>
           <button
             type="button"
@@ -83,8 +87,9 @@ export function VaultCard({ v }: { v: VaultApi }) {
           ) : (
             <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 space-y-2">
               <p className="text-[11px] text-muted-strong">
-                This vault isn&apos;t delegated yet, so ArbiFlow can&apos;t
-                rebalance it. Grant permission to start.
+                {v.keeperDrifted
+                  ? "Your keeper assignment changed (the relayer pool was resized). Re-delegate to resume auto-rebalancing."
+                  : "This vault isn't delegated yet, so ArbiFlow can't rebalance it. Grant permission to start."}
               </p>
               <button
                 type="button"
@@ -93,7 +98,11 @@ export function VaultCard({ v }: { v: VaultApi }) {
                 className="btn-primary w-full rounded-md py-2 text-sm font-medium text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {delegating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {delegating ? "Delegating…" : "Delegate to ArbiFlow"}
+                {delegating
+                  ? "Delegating…"
+                  : v.keeperDrifted
+                    ? "Re-delegate to ArbiFlow"
+                    : "Delegate to ArbiFlow"}
               </button>
             </div>
           )}
@@ -120,17 +129,43 @@ export function VaultCard({ v }: { v: VaultApi }) {
               />
               <button
                 type="button"
-                onClick={() => v.deposit(parsed)}
+                onClick={() => v.deposit(parsed, gasParsed)}
                 disabled={!canDeposit}
                 className="btn-primary rounded-md px-4 py-2 text-sm font-medium text-white inline-flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {depositing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {depositing ? "…" : "Deposit"}
+                {depositing ? "…" : gasParsed > BigInt(0) ? "Deposit + gas" : "Deposit"}
               </button>
             </div>
             {amountNum > walletNum ? (
               <div className="text-[11px] text-rose">exceeds wallet balance</div>
             ) : null}
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+                + gas reserve
+              </span>
+              <div className="flex items-center gap-1.5">
+                {(["0", "0.01", "0.02"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGasAmount(g)}
+                    className={`rounded-md border px-2 py-1 text-[11px] font-mono tabular transition-colors ${
+                      gasAmount === g
+                        ? "border-accent/50 bg-accent/10 text-foreground"
+                        : "border-border text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {g === "0" ? "off" : g}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="text-[10px] text-muted leading-relaxed">
+              Optional — your ETH, withdrawable any time, only reimburses the
+              keeper&apos;s gas per rebalance.
+            </p>
           </div>
 
           {state.activeAmount > BigInt(0) ? (

@@ -46,7 +46,7 @@ contract RebalanceTest is Test {
         vm.stopPrank();
 
         vm.prank(user);
-        vault = DelegationVault(factory.createVault());
+        vault = DelegationVault(payable(factory.createVault()));
         vm.prank(user);
         vault.setKeeper(keeper);
 

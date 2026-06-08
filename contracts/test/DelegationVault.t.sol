@@ -27,7 +27,7 @@ contract DelegationVaultTest is Test {
         factory.setAsset(address(usdc), true);
 
         vm.prank(user);
-        vault = DelegationVault(factory.createVault());
+        vault = DelegationVault(payable(factory.createVault()));
 
         usdc.mint(user, AMT);
     }

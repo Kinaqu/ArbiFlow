@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { PageShell, PageHeader, Section } from "@/components/site/page-shell";
+import { DemoVaultHeartbeat } from "@/components/app/testnet/demo-vault-heartbeat";
 import {
   TESTNET_DEPLOYMENT as DEPLOYMENT,
   isDeployed,
@@ -120,6 +121,8 @@ export default function ArchitecturePage() {
 
   return (
     <PageShell>
+      {/* Keeps the public demo vault auto-rebalancing live on-chain. Renders nothing. */}
+      {deployed && <DemoVaultHeartbeat />}
       <PageHeader
         section="[A] · Architecture"
         title={

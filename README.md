@@ -1,3 +1,7 @@
+# ArbiFlow
+
+Non-custodial DeFi yield router on Arbitrum: a live mainnet intelligence layer plus a testnet-proven delegation vault that auto-rebalances across protocols (see the `/architecture` page).
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

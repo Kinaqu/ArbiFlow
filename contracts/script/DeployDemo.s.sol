@@ -76,7 +76,7 @@ contract DeployDemo is Script {
 
     /// @dev Deposit -> supply into Aave -> move Aave->Compound -> owner withdraw.
     function _demo(address deployer) internal {
-        vault = DelegationVault(factory.createVault());
+        vault = DelegationVault(payable(factory.createVault()));
         vault.setKeeper(deployer);
 
         // Deposit: idle USDC -> vault.

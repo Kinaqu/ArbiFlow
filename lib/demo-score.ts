@@ -2,20 +2,32 @@
 //
 // These scores are intentionally FAKE — there is no live market behind the three
 // stand-in protocols — but they are deterministic, distinct per protocol, and
-// drift over time, so the same `tick` produces the same scores on the server
-// (which decides the rebalance) and in the browser (which shows the user why).
-// Each protocol has its own profile across the factors a real engine would weigh
-// (APY, incentives, protocol risk, 30-day volatility, impermanent loss, gas), so
-// the leader changes every so often — and the keeper sometimes moves, sometimes
-// deliberately stays put.
+// drift over time, so the server (which decides the rebalance) and the browser
+// (which shows the user why) compute the same thing. Each protocol has its own
+// profile across the factors a real engine would weigh (APY, incentives, risk,
+// volatility, IL, gas), so the leader changes every so often — and the keeper
+// sometimes moves, sometimes deliberately stays put.
+//
+// Two time signals are layered on each factor:
+//   • a SLOW drift (period ~60–120s) — the decision signal, so the approved
+//     leader changes a handful of times over a demo. `decisionScoreAt` uses it.
+//   • a fast, small JITTER (period ~3–6s) — display-only liveliness, so the bars
+//     and numbers visibly wobble ~2×/sec. `displayScoreAt` adds it on top.
+// Decisions use the slow signal only, so they don't flip on jitter.
 
 import { TESTNET_DEPLOYMENT as DEPLOYMENT, type ProtocolKey } from "./testnet";
 import type { FundLocation } from "./vault-calls";
 
-/** Decision cadence — one tick every ~25s, inside the 20–30s window. */
-export const TICK_MS = 25_000;
+/** A real on-chain decision/move happens this often on testnet (~35s). */
+export const DECISION_MS = 35_000;
 /** A leader must beat the current spot by this many points to be worth a move. */
 export const HYSTERESIS = 4;
+/** Realistic mainnet cadence (~1 move/week) — used only for the gas estimate. */
+export const MAINNET_MOVE_DAYS = 7;
+/** Rough gas units for one cross-protocol rebalance (withdraw + supply + reimburse). */
+export const MOVE_GAS_ESTIMATE = BigInt(300_000);
+/** Jitter amplitude as a fraction of each factor's slow-drift amplitude. */
+const JITTER_FRACTION = 0.1;
 
 export type ScoreBreakdown = {
   apy: number; // base APY, %
@@ -33,6 +45,9 @@ export type ProtocolScore = {
   rationale: string;
 };
 
+/** A presenter override for the demo controls: force a hold, or boost one key. */
+export type DecisionOverride = { kind: "hold" } | { kind: "boost"; key: ProtocolKey };
+
 /** Result of one keeper decision tick — the /api/keeper/tick response shape.
  *  Lives here (a secret-free module) so client code never imports the route. */
 export type KeeperTickResult = {
@@ -41,9 +56,19 @@ export type KeeperTickResult = {
   from?: FundLocation;
   to?: ProtocolKey;
   hash?: `0x${string}`;
-  tick: number;
-  scores: ProtocolScore[];
-  reason: "moved" | "stay" | "no_funds" | "no_approvals" | "not_delegated";
+  /** Set on a "keeper_error" — the swallowed-but-surfaced failure message. */
+  message?: string;
+  reason:
+    | "moved"
+    | "stay"
+    | "no_funds"
+    | "no_approvals"
+    | "not_delegated"
+    | "needs_gas"
+    | "needs_keeper_float"
+    | "keeper_error"
+    | "demo_boost"
+    | "demo_hold";
 };
 
 /** Distinct baseline profile per protocol. Morpho: best yield, worst risk. */
@@ -91,13 +116,32 @@ function hash01(s: string): number {
   return (h >>> 0) / 4294967296;
 }
 
-/** Smooth per-(protocol, factor) drift over ticks, with a touch of wobble. */
-function drift(key: ProtocolKey, factor: string, tick: number, amp: number): number {
+/** Slow per-(protocol, factor) drift — the decision signal (period ~60–120s). */
+function slowDrift(key: ProtocolKey, factor: string, tMs: number, amp: number): number {
   const phase = hash01(`${key}:${factor}:phase`) * Math.PI * 2;
-  const periodTicks = 4 + Math.floor(hash01(`${key}:${factor}:period`) * 6); // 4..9
-  const slow = Math.sin((tick / periodTicks) * Math.PI * 2 + phase);
-  const wobble = (hash01(`${key}:${factor}:${tick}`) - 0.5) * 0.3;
-  return amp * (slow + wobble);
+  const periodMs = 60_000 + hash01(`${key}:${factor}:period`) * 60_000; // 60–120s
+  return amp * Math.sin((tMs / periodMs) * Math.PI * 2 + phase);
+}
+
+/** Fast, small jitter layered on top for display liveliness (period ~3–6s). */
+function jitter(key: ProtocolKey, factor: string, tMs: number, amp: number): number {
+  const phase = hash01(`${key}:${factor}:jphase`) * Math.PI * 2;
+  const periodMs = 3_000 + hash01(`${key}:${factor}:jperiod`) * 3_000; // 3–6s
+  return amp * JITTER_FRACTION * Math.sin((tMs / periodMs) * Math.PI * 2 + phase);
+}
+
+function breakdownAt(key: ProtocolKey, tMs: number, withJitter: boolean): ScoreBreakdown {
+  const base = BASE[key];
+  const f = (factor: string, amp: number) =>
+    slowDrift(key, factor, tMs, amp) + (withJitter ? jitter(key, factor, tMs, amp) : 0);
+  return {
+    apy: round1(clamp(base.apy + f("apy", 2.2), 0.5, 14)),
+    incentives: round1(clamp(base.incentives + f("inc", 0.8), 0, 5)),
+    risk: Math.round(clamp(base.risk + f("risk", 6), 2, 95)),
+    volatility: Math.round(clamp(base.volatility + f("vol", 8), 2, 95)),
+    il: Math.round(clamp(base.il + f("il", 2), 0, 60)),
+    gas: Math.round(clamp(base.gas + f("gas", 5), 5, 90)),
+  };
 }
 
 function composite(b: ScoreBreakdown): number {
@@ -119,45 +163,58 @@ function rationaleFor(key: ProtocolKey, b: ScoreBreakdown): string {
   return `${label}: ${round1(b.apy)}% APY, balanced risk.`;
 }
 
-/** Deterministic score for one protocol at a given tick. */
-export function scoreProtocolAt(key: ProtocolKey, tick: number): ProtocolScore {
-  const base = BASE[key];
-  const breakdown: ScoreBreakdown = {
-    apy: round1(clamp(base.apy + drift(key, "apy", tick, 2.2), 0.5, 14)),
-    incentives: round1(clamp(base.incentives + drift(key, "inc", tick, 0.8), 0, 5)),
-    risk: Math.round(clamp(base.risk + drift(key, "risk", tick, 6), 2, 95)),
-    volatility: Math.round(clamp(base.volatility + drift(key, "vol", tick, 8), 2, 95)),
-    il: Math.round(clamp(base.il + drift(key, "il", tick, 2), 0, 60)),
-    gas: Math.round(clamp(base.gas + drift(key, "gas", tick, 5), 5, 90)),
-  };
+function scoreFrom(key: ProtocolKey, breakdown: ScoreBreakdown): ProtocolScore {
   return { key, breakdown, score: composite(breakdown), rationale: rationaleFor(key, breakdown) };
 }
 
-/** All protocols' scores at a tick, ranked best-first. */
-export function allScoresAt(tick: number): ProtocolScore[] {
+/** Lively score (slow drift + fast jitter) for the UI bars/numbers. */
+export function displayScoreAt(key: ProtocolKey, tMs: number): ProtocolScore {
+  return scoreFrom(key, breakdownAt(key, tMs, true));
+}
+
+/** Stable score (slow drift only) the keeper actually decides on. */
+export function decisionScoreAt(key: ProtocolKey, tMs: number): ProtocolScore {
+  return scoreFrom(key, breakdownAt(key, tMs, false));
+}
+
+/** All protocols' display scores at a time, ranked best-first (for the panel). */
+export function allDisplayScoresAt(tMs: number): ProtocolScore[] {
   return DEPLOYMENT.protocols
-    .map((p) => scoreProtocolAt(p.key, tick))
+    .map((p) => displayScoreAt(p.key, tMs))
     .sort((a, b) => b.score - a.score);
 }
 
-export const tickFor = (now: number = Date.now()) => Math.floor(now / TICK_MS);
-export const msUntilNextTick = (now: number = Date.now()) => TICK_MS - (now % TICK_MS);
+/** Best *approved* protocol by the stable decision score, or null if none approved. */
+export function decisionLeader(approved: ProtocolKey[], tMs: number): ProtocolScore | null {
+  const set = approved.filter((k) => KNOWN.has(k));
+  if (set.length === 0) return null;
+  return set.map((k) => decisionScoreAt(k, tMs)).sort((a, b) => b.score - a.score)[0];
+}
+
+export const msUntilNextDecision = (now: number = Date.now()) => DECISION_MS - (now % DECISION_MS);
 
 /**
- * The keeper's decision: which approved protocol to hold at this tick, or `null`
- * to stay put. Picks the highest-scoring *approved* protocol, but only moves an
- * already-invested position if the leader beats it by `HYSTERESIS` — so it does
- * not churn on every tiny lead change.
+ * The keeper's decision: which approved protocol to hold at time `tMs`, or `null`
+ * to stay put. A presenter `override` wins first — `hold` forces no move, `boost`
+ * forces a specific approved target. Otherwise it picks the highest-scoring
+ * *approved* protocol on the stable decision score, only moving an already-
+ * invested position if the leader beats it by `HYSTERESIS` (no churn on tiny leads).
  */
 export function decideTarget(
   location: FundLocation,
   approved: ProtocolKey[],
-  tick: number,
+  tMs: number,
+  override?: DecisionOverride,
 ): ProtocolKey | null {
   const set = approved.filter((k) => KNOWN.has(k));
   if (set.length === 0) return null;
 
-  const ranked = set.map((k) => scoreProtocolAt(k, tick)).sort((a, b) => b.score - a.score);
+  if (override?.kind === "hold") return null;
+  if (override?.kind === "boost") {
+    return set.includes(override.key) && override.key !== location ? override.key : null;
+  }
+
+  const ranked = set.map((k) => decisionScoreAt(k, tMs)).sort((a, b) => b.score - a.score);
   const leader = ranked[0];
 
   const inApproved =
@@ -165,10 +222,25 @@ export function decideTarget(
 
   if (inApproved) {
     if (leader.key === location) return null;
-    const current = scoreProtocolAt(location as ProtocolKey, tick).score;
+    const current = decisionScoreAt(location as ProtocolKey, tMs).score;
     if (leader.score - current < HYSTERESIS) return null;
     return leader.key;
   }
   // Idle, or parked in a protocol the user no longer approves → go to the leader.
   return leader.key;
+}
+
+/**
+ * For a chosen ETH gas reserve at the live gas price, how many ~weekly mainnet
+ * moves it covers and roughly how long that lasts. Display-only (the realistic
+ * mainnet cadence, shown separately from the sped-up ~35s testnet demo).
+ */
+export function gasReserveEstimate(
+  reserveWei: bigint,
+  gasPriceWei: bigint,
+): { moves: number; days: number } {
+  const costPerMove = MOVE_GAS_ESTIMATE * gasPriceWei;
+  if (costPerMove <= BigInt(0) || reserveWei <= BigInt(0)) return { moves: 0, days: 0 };
+  const moves = Number(reserveWei) / Number(costPerMove);
+  return { moves, days: moves * MAINNET_MOVE_DAYS };
 }

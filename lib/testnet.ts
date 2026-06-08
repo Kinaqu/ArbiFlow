@@ -45,36 +45,36 @@ export const TESTNET_DEPLOYMENT: TestnetDeployment = {
   chainId: ARBITRUM_SEPOLIA_ID,
   backendSigner: DEMO_BACKEND_SIGNER,
   // --- Arbitrum Sepolia deploy (contracts/script/DeployDemo.s.sol) ---
-  factory: "0xfBD2833422cDb010dD39B0eF4ef05783CBcc81D7",
-  usdc: "0x041797298eEe9F8Aa66D6A0CE9A3af4dB85D2F90",
+  factory: "0xAd84Cd0C4aA9D85D2B8D877C742F3feB59892B78",
+  usdc: "0x3AE930B0960d1d883fDBa4F7Bb9D6Fe03eDE08e5",
   protocols: [
     {
       key: "aave",
       label: "Aave (demo)",
-      address: "0x697F12d48A27692785d6E0FED5f4393A78341305",
-      posToken: "0x935BfDCa1C438648A89983fEFf917Baec17c8041",
+      address: "0x6908ec486B1591aA983D590301407188fdB81667",
+      posToken: "0x258598532799907F7124893000f97307EB5b8975",
     },
     {
       key: "compound",
       label: "Compound (demo)",
-      address: "0x625C4035EC4Fb2ce9Bd9e80a1112244Ffa2771a0",
-      posToken: "0x9Ebd582B9957B5C0625dAa7f7D783B5cD5914fB3",
+      address: "0xd009eFd44546b74AB4D14433FaAeFd9854FB5A2d",
+      posToken: "0xB6417D27fb16c0FFbE530007fa37BCB096bED029",
     },
     {
       key: "morpho",
       label: "Morpho (demo)",
-      address: "0x3C4538bD0184cc5729c1e85b0F41f170873eE586",
-      posToken: "0xEe11Ddd2f71d728cF0D9472ad65712D6813B1724",
+      address: "0xD5AA7198C36fA8342FcAa4Df0ae67d44Fb1FC838",
+      posToken: "0x72De1Ec129D7F73b4bed4631E0be9e6f13E23bd7",
     },
   ],
-  demoVault: "0x49db49ecf73b945Ea4eBA8d7e502dDF4bd5266D4",
+  demoVault: "0xB2AA9601b085350fD0eE12697C829BBa51f4d56E",
   txs: {
     deposit:
-      "0x794c50f4e62359cdbbc1f8ea136fa504adcca30bfa3b17001011ad0072413fee",
+      "0x2112658d20d8671fdbf0287783aa09d589c7903374a2e3b0544996617285ff07",
     rebalance:
-      "0x1285b71d685cbb21b5945d3e4df53e5ce76f294b892cde41f80a806cd721da32",
+      "0x49de94facec1e9704437fa5de349e5b05e110a929b13b9c5b2fe37a708da3d02",
     withdraw:
-      "0xef54c6ed81290ff070240c398c4a38729c40d8bfef66d29b0298e8e033b1b2a4",
+      "0x1532325cb5b26a849f1b1b9e379a4bc3b2173ece092c8e7ab7b0a815f0369208",
   },
 };
 
