@@ -1,18 +1,20 @@
+import { POOLS_SCORED } from "@/lib/constants";
+
 const stats = [
   {
-    v: "$2.4B",
-    l: "estimated idle stablecoin balance on Arbitrum",
-    src: "DeFiLlama, 2026",
+    v: `${POOLS_SCORED}+`,
+    l: "Arbitrum yield pools to compare — lending, LPs, perps, fixed yield",
+    src: "DeFiLlama",
   },
   {
-    v: "4.1×",
-    l: "spread between worst and best USDC yield this week",
-    src: "ArbiFlow index",
+    v: "3–14%",
+    l: "the USDC yield range across them; the wrong pick leaves money idle",
+    src: "DeFiLlama",
   },
   {
-    v: "27%",
-    l: "of advertised APYs erode under realistic gas",
-    src: "ArbiFlow scoring",
+    v: "0%",
+    l: "what stablecoins earn sitting untouched in your wallet",
+    src: "",
   },
 ];
 
@@ -29,10 +31,9 @@ export function Problem() {
             <span className="text-muted">just sitting there.</span>
           </h2>
           <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-            The average Arbitrum wallet leaves{" "}
-            <span className="text-foreground font-medium">60%+</span> of its
-            balance earning nothing — because comparing protocols by hand is a
-            full-time job.
+            Too much capital sits in stablecoins earning nothing — not because
+            users are careless, but because comparing every protocol by hand is
+            a full-time job.
           </p>
         </div>
 

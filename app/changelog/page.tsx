@@ -9,34 +9,29 @@ export const metadata: Metadata = {
 
 const entries = [
   {
-    date: "2026-05-26",
+    date: "2026-06-08",
+    tag: "Testnet",
+    body: "Keeper fails fast on a backend-signer mismatch and now surfaces the real tx-failure reason in the UI. Clearer allow-list control, trimmed copy. Buffered maxFeePerGas on user txs to survive the Arbitrum base-fee race.",
+  },
+  {
+    date: "2026-06-07",
+    tag: "Vault",
+    body: "Redeployed the DelegationVault stack on Arbitrum Sepolia with a working ETH gas reserve (receive()), a per-deposit skim, a keeper-float gate, and drift hardening. The demo vault auto-rebalances live via an on-page heartbeat.",
+  },
+  {
+    date: "2026-06-07",
+    tag: "Keeper",
+    body: "Users now fund the keeper float — a per-deposit skim refills it, and the standalone gas-funder is off by default.",
+  },
+  {
+    date: "2026-06-06",
+    tag: "Keeper",
+    body: "Per-vault ETH gas reserve, reimbursed to the keeper on each rebalance. Sharded keeper pool for parallel submission. Demo hold / boost controls.",
+  },
+  {
+    date: "2026-05-29",
     tag: "Engine",
-    body: "Pivoted positioning from read-only scanner to scan → deploy. Landing rebuilt around the decision engine.",
-  },
-  {
-    date: "2026-05-25",
-    tag: "Wallet",
-    body: "Reown AppKit connect modal wired across Hero, Nav, and CTA. /app dashboard now reads live Top-20 Arbitrum balances.",
-  },
-  {
-    date: "2026-05-24",
-    tag: "Scoring",
-    body: "Added decay-adjusted incentive token term to the formula. Recalibrated default risk weights against Q1 2026 realized PnL.",
-  },
-  {
-    date: "2026-05-20",
-    tag: "Data",
-    body: "Replaced spot APY pull with 30-day TWAP. Cut spike noise on Radiant and Camelot rankings by ~40%.",
-  },
-  {
-    date: "2026-05-15",
-    tag: "Coverage",
-    body: "Added Pendle PT and Silo isolated lending markets to the universe. Total tracked venues: 42.",
-  },
-  {
-    date: "2026-05-10",
-    tag: "Engine",
-    body: "Gas-curve simulation introduced. Top-of-book now varies by wallet size — same protocols, different rankings.",
+    body: "Live intelligence layer: wallet scan across Arbitrum, Base & Optimism; DeFiLlama pool scoring (APY · TVL · trust · stability · forecast → 0–100); one-signature deposit via Aave, Enso and Relay.",
   },
 ];
 
@@ -51,7 +46,7 @@ export default function ChangelogPage() {
             <span className="text-muted">and why it changed.</span>
           </>
         }
-        subtitle="Engine recalibrations, weight tweaks, integrations, and shipped features. Every change to the model that could move a ranking is documented here."
+        subtitle="Shipped features, protocol integrations, and on-chain milestones — the real build log."
       />
 
       <Section number="01" label="Recent" title="Most recent first.">

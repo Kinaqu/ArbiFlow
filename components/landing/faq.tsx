@@ -13,8 +13,8 @@ const faqs = [
     a: "Arbitrum One only, on purpose. The scoring model is tuned to Arbitrum gas and protocol mix. Other chains come once the model is hardened.",
   },
   {
-    q: "How are APYs computed?",
-    a: "We start from raw protocol APYs, normalize them over a 30-day window, decay-adjust token incentives, then subtract simulated gas at your wallet size to land on a net APY.",
+    q: "How is the score computed?",
+    a: "We pull live pool data from DeFiLlama — yield, TVL, and a stability forecast — then combine five factors into one 0–100 score: APY (40), TVL (20), protocol trust (15), stability (15), and forecast (10). We rank on that composite, not on headline APY alone.",
   },
   {
     q: "Why should I trust the risk weights?",
@@ -22,11 +22,11 @@ const faqs = [
   },
   {
     q: "Do you take a fee?",
-    a: "Scanning is free. There is no ArbiFlow token. On deploys, we charge a small, disclosed performance fee on incremental yield only — never on your principal, never on the amount you deploy.",
+    a: "Scanning and deploying are free today, and there is no ArbiFlow token. If we ever add a fee, it will be a small, disclosed performance fee on incremental yield only — never on your principal, never on the amount you deploy.",
   },
   {
     q: "What data sources do you use?",
-    a: "DefiLlama for protocol yields, Arbitrum public RPC for balances and positions, and several audit registries for protocol risk. All sources are listed in the docs.",
+    a: "DeFiLlama for pool yields, TVL and forecasts; Arbitrum, Base and Optimism public RPC for your wallet balances. That's it — every source is listed in the methodology.",
   },
 ];
 

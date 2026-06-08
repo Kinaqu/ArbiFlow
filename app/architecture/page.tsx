@@ -38,7 +38,7 @@ const mainnetLayer = [
   {
     name: "Live protocol data",
     detail:
-      "DeFiLlama feed — 42 Arbitrum protocols, APY + TVL, refreshed every 5 min with a snapshot fallback.",
+      "DeFiLlama feed — hundreds of Arbitrum pools across 8 curated protocols, APY + TVL, refreshed every 5 min with a snapshot fallback.",
     src: "lib/llama.ts",
   },
   {
@@ -50,7 +50,7 @@ const mainnetLayer = [
   {
     name: "Risk-adjusted scoring",
     detail:
-      "Gas-aware net APY ranking over APY, TVL, protocol trust, stability & price forecast.",
+      "A 0–100 composite ranking over APY, TVL, protocol trust, stability & price forecast.",
     src: "lib/score.ts",
   },
   {
@@ -112,7 +112,7 @@ const mainnetSteps = [
   {
     head: "Audit & ship",
     detail:
-      "External audit of the vault, then flip the dashboard's one-click deploy onto mainnet.",
+      "External audit of the vault, then open it on mainnet for DAI, USDC, USDT and more — deposit once, auto-rebalanced into the top-scoring protocol.",
   },
 ];
 
@@ -152,12 +152,6 @@ export default function ArchitecturePage() {
               className="text-accent hover:text-accent-hover transition-colors"
             >
               open dashboard →
-            </Link>
-            <Link
-              href="/status"
-              className="text-muted hover:text-foreground transition-colors"
-            >
-              status →
             </Link>
           </div>
         </div>

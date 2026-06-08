@@ -18,13 +18,13 @@ export default function AboutPage() {
             <span className="gradient-text-gold">idle capital and zero time.</span>
           </>
         }
-        subtitle="ArbiFlow is an Arbitrum-native decision engine for retail and prosumer DeFi users. We do one thing — score every yield opportunity by net APY after risk and gas — and we publish the math."
+        subtitle="ArbiFlow is an Arbitrum-native decision engine for retail and prosumer DeFi users. We do one thing — score every Arbitrum pool with a single 0–100 composite — and we publish the math."
       />
 
       <Section number="01" label="Why" title="Why this exists.">
         <div className="lg:col-span-7 space-y-5 text-muted-strong leading-relaxed">
           <p>
-            Over 60% of the average Arbitrum wallet sits in tokens earning
+            Too much of the average Arbitrum wallet sits in tokens earning
             nothing. Not because users are lazy — because comparing protocols
             is a full-time job. APYs lie. Gas eats returns. Risk is impossible
             to price without a model.
@@ -58,7 +58,7 @@ export default function AboutPage() {
               business model
             </div>
             <div className="font-medium">
-              Performance fee on incremental yield (not principal)
+              Planned: performance fee on incremental yield (never principal)
             </div>
           </div>
         </div>
@@ -68,10 +68,10 @@ export default function AboutPage() {
         <div className="lg:col-span-12">
           <ul className="grid sm:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden">
             {[
-              ["Custody your funds", "You sign every action. We have no admin keys."],
+              ["Custody your funds", "You sign every action on mainnet. The testnet vault lets a keeper rebalance within limits — but only you can ever withdraw."],
               ["Hidden partner ordering", "If a worse protocol pays us more, the better one still ranks first."],
               ["Launch a token", "No airdrop. No staking gimmick. The product is the product."],
-              ["Hand-tune per protocol", "One formula. One weight set. Adjust them yourself or do not use us."],
+              ["Hand-tune per protocol", "One formula, one weight set, applied to every pool. No per-protocol tuning."],
             ].map(([k, v]) => (
               <li key={k} className="bg-background p-6">
                 <div className="text-sm font-medium mb-2">{k}</div>

@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ArbiFlow — Deploy idle capital into optimized DeFi yield",
   description:
-    "ArbiFlow scans your Arbitrum wallet, ranks every yield opportunity by risk-adjusted, gas-aware net APY, and deploys into the top-scoring strategy in one signature. Non-custodial.",
+    "ArbiFlow scans your Arbitrum wallet, ranks every pool by a 0–100 composite score, and deploys into the top-scoring strategy in one signature. Non-custodial.",
   metadataBase: new URL("https://arbiflow.xyz"),
   openGraph: {
     title: "ArbiFlow — Deploy idle capital into optimized DeFi yield",

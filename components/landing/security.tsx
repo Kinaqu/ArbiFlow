@@ -110,6 +110,13 @@ export function Security() {
             </div>
           </div>
         </div>
+
+        <p className="mt-6 text-xs text-muted leading-relaxed max-w-3xl">
+          The optional delegation vault (testnet) works differently by design:
+          you authorize a keeper to rebalance for you, but the contract still
+          enforces whitelisted-only moves, a portfolio-value floor on every
+          move, and owner-only withdrawals — ArbiFlow can route, never drain.
+        </p>
       </div>
     </section>
   );

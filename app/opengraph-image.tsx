@@ -26,7 +26,6 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={markSrc} width={62} height={62} alt="" />
           <div style={{ fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>
             ArbiFlow
@@ -46,7 +45,7 @@ export default function OpengraphImage() {
             Deploy idle capital into optimized DeFi yield
           </div>
           <div style={{ fontSize: 29, color: "#A8AEBC", letterSpacing: -0.4 }}>
-            Arbitrum-native · risk-adjusted, gas-aware net APY · non-custodial
+            Arbitrum-native · 0–100 composite score · non-custodial
           </div>
         </div>
 
