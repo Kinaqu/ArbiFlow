@@ -22,9 +22,7 @@ const cols: { title: string; items: Item[] }[] = [
       { label: "Docs", href: "/docs" },
       { label: "API", href: "/api-docs" },
       { label: "Methodology", href: "/methodology" },
-      { label: "Open data", href: "/open-data" },
       { label: "Architecture", href: "/architecture" },
-      { label: "Status", href: "/status" },
     ],
   },
   {
@@ -33,7 +31,6 @@ const cols: { title: string; items: Item[] }[] = [
       { label: "About", href: "/about" },
       { label: "GitHub", href: "https://github.com/Kinaqu/ArbiFlow", external: true },
       { label: "Contact", href: "/contact" },
-      { label: "Press kit", href: "/press-kit" },
     ],
   },
 ];
@@ -59,7 +56,7 @@ export function Footer() {
             </p>
             <div className="mt-6 flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted">
               <span className="w-1 h-1 rounded-full bg-mint animate-pulse" />
-              all systems operational · arbitrum one
+              non‑custodial · arbitrum one
             </div>
           </div>
           {cols.map((c) => (

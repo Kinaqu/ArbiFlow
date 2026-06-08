@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Plug, ScanLine, Sparkles, Rocket } from "lucide-react";
 import clsx from "clsx";
-import { PROTOCOL_COUNT } from "@/lib/constants";
+import { POOLS_SCORED } from "@/lib/constants";
 import { CardSwap, Card } from "./card-swap";
 
 const steps = [
@@ -20,17 +20,17 @@ const steps = [
     n: "02",
     icon: ScanLine,
     title: "Scan in stages",
-    body: "Balances, idle capital, ~40 yield venues, scoring — each stage streams in milliseconds. You see the math as it computes.",
-    detail: `${PROTOCOL_COUNT} / ${PROTOCOL_COUNT}`,
-    detailLabel: "protocols scored",
+    body: "Balances, idle capital, live Arbitrum pools, scoring — each stage streams in real time. You see the math as it computes.",
+    detail: `${POOLS_SCORED}+`,
+    detailLabel: "pools scored",
   },
   {
     n: "03",
     icon: Sparkles,
     title: "Strategies, ranked",
-    body: "An ordered list with the full breakdown behind every score. Gas-adjusted for your wallet size and risk tolerance.",
-    detail: "+$184/yr",
-    detailLabel: "uplift on top pick",
+    body: "An ordered list with the full 0–100 breakdown behind every score — APY, TVL, trust, stability and forecast.",
+    detail: "0–100",
+    detailLabel: "score per pool",
   },
   {
     n: "04",

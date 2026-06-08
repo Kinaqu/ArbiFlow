@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { PROTOCOL_COUNT } from "@/lib/constants";
+import { CURATED_PROTOCOL_COUNT } from "@/lib/constants";
 
 const groups = [
   {
@@ -10,8 +10,6 @@ const groups = [
       { name: "Aave v3", slug: "aave-v3" },
       { name: "Radiant", slug: "radiant-v2" },
       { name: "Compound v3", slug: "compound-v3" },
-      { name: "Silo", slug: "silo-v2" },
-      { name: "Dolomite", slug: "dolomite" },
     ],
   },
   {
@@ -19,26 +17,16 @@ const groups = [
     items: [
       { name: "Uniswap v3", slug: "uniswap-v3" },
       { name: "Camelot v3", slug: "camelot-v3" },
-      { name: "Balancer", slug: "balancer-v2" },
       { name: "Curve", slug: "curve-dex" },
-      { name: "Gamma", slug: "gamma" },
     ],
   },
   {
     cat: "Perps · real yield",
-    items: [
-      { name: "GMX v2", slug: "gmx-v2-perps" },
-      { name: "Gains", slug: "gains-network" },
-    ],
+    items: [{ name: "GMX v2", slug: "gmx-v2-perps" }],
   },
   {
-    cat: "Yield · LSTs",
-    items: [
-      { name: "Pendle", slug: "pendle" },
-      { name: "Lido", slug: "lido" },
-      { name: "ether.fi", slug: "ether-fi" },
-      { name: "Beefy", slug: "beefy" },
-    ],
+    cat: "Fixed yield",
+    items: [{ name: "Pendle", slug: "pendle" }],
   },
 ];
 
@@ -52,12 +40,14 @@ export function Protocols() {
               [06] · Coverage
             </div>
             <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-              {PROTOCOL_COUNT} protocols.{" "}
+              {CURATED_PROTOCOL_COUNT} curated protocols.{" "}
               <span className="text-muted">One ranking.</span>
             </h2>
             <p className="mt-5 text-base text-muted-strong leading-relaxed">
-              ArbiFlow indexes every major yield venue on Arbitrum and
-              compares them on equal terms. No protocol pays for placement.
+              ArbiFlow anchors on these blue-chips, then folds in Arbitrum
+              portal picks and honorable mentions from the wider DeFiLlama
+              universe — all scored on equal terms. No protocol pays for
+              placement.
             </p>
             <div className="mt-7 flex items-center gap-3 text-xs font-mono">
               <span className="px-2 py-1 rounded border border-border bg-surface text-muted-strong">

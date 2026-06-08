@@ -1,250 +1,230 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, AlertTriangle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ConnectButton } from "@/components/wallet/connect-button";
-import { PROTOCOL_COUNT } from "@/lib/constants";
+import { POOLS_SCORED } from "@/lib/constants";
+
+// Illustrative sample. Breakdowns mirror lib/score.ts (APY 40 · TVL 20 · Trust
+// 15 · Stability 15 · Forecast 10 → 100); each card's five contributions sum to
+// the score shown. Real numbers come from a live scan.
+const FACTOR_COLORS = {
+  apy: "#34E0A1",
+  tvl: "#2F7BFF",
+  trust: "#F4B53F",
+  stability: "#6FA5FF",
+  forecast: "#FF8A3F",
+} as const;
+
+const FACTOR_LABELS = {
+  apy: "APY",
+  tvl: "TVL",
+  trust: "Trust",
+  stability: "Stability",
+  forecast: "Forecast",
+} as const;
+
+type Factor = keyof typeof FACTOR_COLORS;
 
 const cards = [
   {
-    badge: "Best risk-adjusted",
+    badge: "Best score",
     badgeTone: "gold",
     proto: "Aave v3",
     icon: "/icons/protocols/aave-v3.png",
     asset: "USDC",
-    score: 82,
     apy: "4.31",
-    base: "3.92",
-    incentive: "+0.61",
-    gas: "-0.22",
-    risk: { protocol: 18, vol: 8, liq: 5, gas: 12 },
-    riskLabel: "Low",
     color: "#B6509E",
+    breakdown: { apy: 19, tvl: 20, trust: 15, stability: 15, forecast: 9 },
   },
   {
-    badge: "Highest yield · sustainable",
+    badge: "Fixed yield",
     badgeTone: "blue",
-    proto: "Radiant Capital",
-    icon: "/icons/protocols/radiant-v2.png",
-    asset: "USDC",
-    score: 74,
-    apy: "6.84",
-    base: "4.10",
-    incentive: "+3.20",
-    gas: "-0.46",
-    risk: { protocol: 32, vol: 12, liq: 14, gas: 18 },
-    riskLabel: "Medium",
+    proto: "Pendle",
+    icon: "/icons/protocols/pendle.png",
+    asset: "USDC PT",
+    apy: "8.92",
     color: "#7E62E5",
+    breakdown: { apy: 24, tvl: 14, trust: 15, stability: 12, forecast: 8 },
   },
   {
-    badge: "Aggressive · monitor weekly",
+    badge: "Higher risk",
     badgeTone: "rose",
     proto: "GMX v2",
     icon: "/icons/protocols/gmx-v2-perps.png",
-    asset: "GLP basket",
-    score: 58,
+    asset: "GLP",
     apy: "14.22",
-    base: "11.40",
-    incentive: "+3.50",
-    gas: "-0.68",
-    risk: { protocol: 22, vol: 48, liq: 18, gas: 14 },
-    riskLabel: "High",
     color: "#03d1ce",
+    breakdown: { apy: 31, tvl: 16, trust: 15, stability: 0, forecast: 6 },
   },
-];
+] satisfies ReadonlyArray<{
+  badge: string;
+  badgeTone: string;
+  proto: string;
+  icon: string;
+  asset: string;
+  apy: string;
+  color: string;
+  breakdown: Record<Factor, number>;
+}>;
+
+const FACTOR_ORDER: Factor[] = ["apy", "tvl", "trust", "stability", "forecast"];
 
 export function Opportunities() {
   return (
-    <section
-      id="opportunities"
-      className="relative"
-    >
+    <section id="opportunities" className="relative">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-6 lg:py-8">
         <div className="max-w-2xl mb-7">
           <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
             [04] · Sample output
           </div>
           <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-            What a real scan returns.
+            What a scan returns.
           </h2>
           <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-            Top picks for a wallet holding $2,340 in idle USDC and ARB.
+            Each pool scored 0–100, with every factor&apos;s contribution shown.
+            Illustrative picks below — a live scan ranks your idle capital.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
-          {cards.map((c, i) => (
-            <motion.div
-              key={c.proto}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: i * 0.1 }}
-              className="group relative bg-surface border border-border rounded-xl overflow-hidden hover:border-border-strong transition-all"
-              style={
-                i === 0
-                  ? {
-                      boxShadow:
-                        "inset 0 0 0 1px rgba(244, 181, 63, 0.18), 0 30px 60px -30px rgba(244, 181, 63, 0.18)",
-                    }
-                  : undefined
-              }
-            >
-              {/* Badge */}
-              <div className="px-5 pt-5 flex items-center justify-between">
-                <span
-                  className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded border ${
-                    c.badgeTone === "gold"
-                      ? "text-gold border-gold/30 bg-gold/5"
-                      : c.badgeTone === "rose"
-                        ? "text-rose border-rose/30 bg-rose/5"
-                        : "text-accent border-accent/30 bg-accent/5"
-                  }`}
-                >
-                  {c.badge}
-                </span>
-                <span className="font-mono tabular text-[10px] uppercase tracking-widest text-muted">
-                  #{String(i + 1).padStart(2, "0")} / {PROTOCOL_COUNT}
-                </span>
-              </div>
-
-              {/* Header */}
-              <div className="px-5 pt-4 pb-5 border-b hairline">
-                <div className="flex items-center gap-3.5">
+          {cards.map((c, i) => {
+            const score = FACTOR_ORDER.reduce((s, k) => s + c.breakdown[k], 0);
+            return (
+              <motion.div
+                key={c.proto}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ delay: i * 0.1 }}
+                className="group relative bg-surface border border-border rounded-xl overflow-hidden hover:border-border-strong transition-all"
+                style={
+                  i === 0
+                    ? {
+                        boxShadow:
+                          "inset 0 0 0 1px rgba(244, 181, 63, 0.18), 0 30px 60px -30px rgba(244, 181, 63, 0.18)",
+                      }
+                    : undefined
+                }
+              >
+                {/* Badge + rank */}
+                <div className="px-5 pt-5 flex items-center justify-between">
                   <span
-                    className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-surface-2 overflow-hidden shrink-0"
-                    style={{ boxShadow: `inset 0 0 0 1px ${c.color}40` }}
+                    className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded border ${
+                      c.badgeTone === "gold"
+                        ? "text-gold border-gold/30 bg-gold/5"
+                        : c.badgeTone === "rose"
+                          ? "text-rose border-rose/30 bg-rose/5"
+                          : "text-accent border-accent/30 bg-accent/5"
+                    }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={c.icon}
-                      alt={c.proto}
-                      width={30}
-                      height={30}
-                      className="w-[30px] h-[30px] object-contain rounded-[22%]"
-                    />
-                    <span
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background: `radial-gradient(circle at 50% 0%, ${c.color}1f, transparent 70%)`,
-                      }}
-                    />
+                    {c.badge}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-lg font-medium leading-tight truncate">
-                      {c.proto}
-                    </div>
-                    <div className="font-mono text-sm text-muted mt-0.5">
-                      Asset · {c.asset}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="font-mono tabular text-[10px] uppercase tracking-widest text-muted">
+                    #{String(i + 1).padStart(2, "0")}
+                  </span>
+                </div>
+
+                {/* Header: protocol + score */}
+                <div className="px-5 pt-4 pb-5 border-b hairline">
+                  <div className="flex items-center gap-3.5">
                     <span
-                      className={`font-mono tabular text-xl font-semibold leading-none ${
-                        i === 0 ? "gradient-text-gold" : "text-foreground"
-                      }`}
+                      className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-surface-2 overflow-hidden shrink-0"
+                      style={{ boxShadow: `inset 0 0 0 1px ${c.color}40` }}
                     >
-                      {c.score}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={c.icon}
+                        alt={c.proto}
+                        width={30}
+                        height={30}
+                        className="w-[30px] h-[30px] object-contain rounded-[22%]"
+                      />
                     </span>
-                    <span className="text-[9px] font-mono uppercase tracking-widest text-muted mt-1">
-                      score
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-lg font-medium leading-tight truncate">
+                        {c.proto}
+                      </div>
+                      <div className="font-mono text-sm text-muted mt-0.5">
+                        Asset · {c.asset}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span
+                        className={`font-mono tabular text-xl font-semibold leading-none ${
+                          i === 0 ? "gradient-text-gold" : "text-foreground"
+                        }`}
+                      >
+                        {score}
+                      </span>
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-muted mt-1">
+                        score / 100
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* APY breakdown */}
-              <div className="px-5 py-4 border-b hairline">
-                <div className="flex items-baseline justify-between mb-3">
+                {/* APY */}
+                <div className="px-5 py-4 border-b hairline flex items-baseline justify-between">
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-                    Net APY
+                    APY
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span
                       className={`text-4xl font-mono tabular font-semibold ${
-                        i === 0
-                          ? "gradient-text-gold"
-                          : "text-foreground"
+                        i === 0 ? "gradient-text-gold" : "text-foreground"
                       }`}
                     >
                       {c.apy}
                     </span>
-                    <span className="text-lg font-mono text-muted-strong">
-                      %
-                    </span>
+                    <span className="text-lg font-mono text-muted-strong">%</span>
                   </div>
                 </div>
-                <div className="space-y-1.5 text-xs font-mono">
-                  <div className="flex justify-between text-muted-strong">
-                    <span>Base yield</span>
-                    <span className="tabular">{c.base}%</span>
-                  </div>
-                  <div className="flex justify-between text-mint">
-                    <span>Incentives</span>
-                    <span className="tabular">{c.incentive}%</span>
-                  </div>
-                  <div className="flex justify-between text-rose">
-                    <span>Gas drag</span>
-                    <span className="tabular">{c.gas}%</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Risk bars */}
-              <div className="px-5 pt-4 pb-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-                    Risk profile
+                {/* Composite breakdown */}
+                <div className="px-5 pt-4 pb-5">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-3">
+                    composite score
                   </div>
-                  <div
-                    className={`text-[10px] font-mono uppercase tracking-widest flex items-center gap-1 ${
-                      c.riskLabel === "Low"
-                        ? "text-mint"
-                        : c.riskLabel === "Medium"
-                          ? "text-gold"
-                          : "text-rose"
-                    }`}
-                  >
-                    {c.riskLabel === "High" && (
-                      <AlertTriangle className="w-3 h-3" />
-                    )}
-                    {c.riskLabel}
+                  <div className="flex h-1.5 rounded-full overflow-hidden bg-border">
+                    {FACTOR_ORDER.map((k) => (
+                      <span
+                        key={k}
+                        style={{
+                          width: `${c.breakdown[k]}%`,
+                          background: FACTOR_COLORS[k],
+                        }}
+                      />
+                    ))}
                   </div>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {Object.entries(c.risk).map(([k, v]) => (
-                    <div key={k}>
-                      <div className="h-1 bg-border rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${v}%`,
-                            background:
-                              v < 20
-                                ? "#34E0A1"
-                                : v < 40
-                                  ? "#F4B53F"
-                                  : "#FF5A6B",
-                          }}
+                  <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
+                    {FACTOR_ORDER.map((k) => (
+                      <span
+                        key={k}
+                        className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider text-muted"
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: FACTOR_COLORS[k] }}
                         />
-                      </div>
-                      <div className="text-[9px] font-mono uppercase tracking-widest text-muted mt-1.5 text-center">
-                        {k}
-                      </div>
-                    </div>
-                  ))}
+                        {FACTOR_LABELS[k]} {c.breakdown[k]}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex flex-col items-center gap-3">
           <ConnectButton size="lg" className="font-semibold">
             Scan your wallet · full ranked list
             <ArrowRight className="w-4 h-4" />
           </ConnectButton>
+          <p className="text-[11px] font-mono text-muted">
+            connect to score {POOLS_SCORED}+ live Arbitrum pools
+          </p>
         </div>
       </div>
     </section>

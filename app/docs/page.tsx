@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Cpu, Gauge, ShieldAlert, Code2, Database } from "lucide-react";
+import { ArrowRight, BookOpen, Cpu, Gauge, ShieldAlert, Code2, Layers } from "lucide-react";
 import { PageShell, PageHeader, Section } from "@/components/site/page-shell";
 
 export const metadata: Metadata = {
@@ -20,31 +20,31 @@ const concepts = [
     icon: ShieldAlert,
     title: "Risk model",
     href: "/risk-model",
-    body: "The four axes, their weights, and the floors that exclude bad strategies.",
+    body: "How trust, stability and forecast price resilience into the score.",
   },
   {
     icon: Gauge,
     title: "Methodology",
     href: "/methodology",
-    body: "Data sources, normalization, gas simulation, what we do not model.",
+    body: "Data sources, the pool-to-score transform, refresh cadence, known limits.",
   },
   {
     icon: Code2,
     title: "API reference",
     href: "/api-docs",
-    body: "Read-only endpoints for scans, strategy lists, and historical scores.",
+    body: "Read-only HTTP endpoints for wallet scans and ranked pools.",
   },
   {
-    icon: Database,
-    title: "Open data",
-    href: "/open-data",
-    body: "Daily strategy-universe snapshots. CSV and JSON, no auth.",
+    icon: Layers,
+    title: "Architecture",
+    href: "/architecture",
+    body: "Live mainnet intelligence plus the testnet delegation vault.",
   },
   {
     icon: BookOpen,
     title: "Changelog",
     href: "/changelog",
-    body: "Every model recalibration, weight change, and integration addition.",
+    body: "Shipped features, integrations, and on-chain milestones.",
   },
 ];
 
@@ -74,9 +74,9 @@ export default function DocsPage() {
               Confirm the connection. No signature required for scanning.
             </li>
             <li>
-              The dashboard at <span className="font-mono">/app</span> loads
-              your Top-20 Arbitrum balances, totals your idle capital, and
-              (Phase 2+) surfaces ranked strategies.
+              The dashboard at <span className="font-mono">/app</span> reads
+              your balances across Arbitrum, Base and Optimism, totals your idle
+              capital, and surfaces ranked strategies.
             </li>
             <li>
               When you find a strategy worth running, hit{" "}
@@ -120,7 +120,7 @@ export default function DocsPage() {
         </div>
       </Section>
 
-      <Section number="02" label="Concepts" title="Read these four before you deploy anything.">
+      <Section number="02" label="Concepts" title="Read these before you deploy anything.">
         <div className="lg:col-span-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {concepts.map((c) => {
             const Icon = c.icon;
@@ -152,24 +152,24 @@ export default function DocsPage() {
                 "Any stable asset (USDC, USDT, DAI…) sitting in an EOA above $5. Volatile assets are tracked but never flagged idle.",
               ],
               [
-                "Net APY",
-                "Yield after gas, slippage, and risk-weighted penalties. The number the engine ranks on.",
+                "Composite score",
+                "A 0–100 sum of five factors — APY, TVL, trust, stability, forecast. Higher is better; comparable across every pool. The number the engine ranks on.",
               ],
               [
-                "Score",
-                "Output of the scoring formula. Higher is better. Comparable across protocols and tokens.",
+                "Tier",
+                "core (curated blue-chip) or honorable (passed the TVL / APY / no-IL filter from the wider universe). Sets the trust contribution.",
               ],
               [
-                "Risk weight",
-                "0–10 number per axis. Higher = riskier. Defaults are published; override in dashboard.",
+                "Stability",
+                "Score bonus for stablecoin pools and for pools with no impermanent-loss risk.",
               ],
               [
-                "Decay-adjusted incentive",
-                "Token reward projected over a 90-day hold, accounting for emission schedule.",
+                "Forecast",
+                "DeFiLlama's Stable/Up probability that the yield holds, scaled into the score.",
               ],
               [
-                "Hold horizon",
-                "How long you intend to keep capital deployed. Affects gas amortization.",
+                "Idle threshold",
+                "$5 — stablecoin balances below it aren't flagged as idle capital.",
               ],
             ].map(([term, defn]) => (
               <div key={term} className="grid lg:grid-cols-12 gap-3 py-5">

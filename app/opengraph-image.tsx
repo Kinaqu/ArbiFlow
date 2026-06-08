@@ -46,7 +46,7 @@ export default function OpengraphImage() {
             Deploy idle capital into optimized DeFi yield
           </div>
           <div style={{ fontSize: 29, color: "#A8AEBC", letterSpacing: -0.4 }}>
-            Arbitrum-native · risk-adjusted, gas-aware net APY · non-custodial
+            Arbitrum-native · 0–100 composite score · non-custodial
           </div>
         </div>
 

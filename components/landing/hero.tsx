@@ -13,7 +13,7 @@ import { EngineVisual } from "./engine-visual";
 import { ProtocolConstellation } from "./protocol-constellation";
 import { RotatingProtocol } from "./rotating-protocol";
 import { ConnectButton } from "@/components/wallet/connect-button";
-import { PROTOCOL_COUNT } from "@/lib/constants";
+import { CURATED_PROTOCOL_COUNT } from "@/lib/constants";
 
 const container: Variants = {
   hidden: {},
@@ -67,7 +67,7 @@ function CountUp({
 }
 
 const stats: { node: React.ReactNode; l: string }[] = [
-  { node: <CountUp value={PROTOCOL_COUNT} />, l: "protocols indexed" },
+  { node: <CountUp value={CURATED_PROTOCOL_COUNT} />, l: "curated protocols" },
   { node: <CountUp value={1.8} decimals={1} suffix="s" />, l: "wallet scan time" },
   { node: "1 sig", l: "to deploy" },
   { node: "$0", l: "scan · no token" },
@@ -162,6 +162,19 @@ export function Hero() {
                 <Lock className="w-3.5 h-3.5" />
                 Non‑custodial · you sign every tx
               </div>
+            </motion.div>
+
+            <motion.div variants={item} className="mt-4">
+              <a
+                href="/architecture"
+                className="inline-flex items-center gap-2 text-xs text-muted-strong hover:text-foreground transition-colors"
+              >
+                <span className="text-[10px] font-mono uppercase tracking-widest text-gold border border-gold/30 rounded px-1.5 py-0.5">
+                  testnet
+                </span>
+                Next: a non‑custodial vault that auto‑rebalances for you
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
             </motion.div>
 
             {/* Stat strip — anchored under the copy as a spec line */}

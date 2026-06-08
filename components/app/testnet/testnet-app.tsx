@@ -71,6 +71,9 @@ function Header() {
         Mint afUSDC → deposit to your vault → approve the protocols you trust.
         ArbiFlow rebalances across them every ~35s; only you can withdraw.
       </p>
+      <p className="text-sm text-muted max-w-2xl mt-2">
+        This is the experience headed to mainnet — with your real DAI, USDC and USDT.
+      </p>
     </div>
   );
 }
