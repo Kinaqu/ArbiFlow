@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 type Star = {
@@ -38,41 +39,95 @@ const STARS: Star[] = [
 const MASK =
   "radial-gradient(ellipse 62% 60% at 50% 42%, transparent 32%, #000 78%)";
 
-export function ProtocolConstellation() {
+export function ProtocolConstellation({
+  active = false,
+  targetRef,
+}: {
+  // When true, the icons magnetise toward `targetRef` (the ArbiFlow square
+  // above the hero CTA) and fade out; on false they spring back and resume the
+  // idle float.
+  active?: boolean;
+  targetRef?: RefObject<HTMLElement | null>;
+}) {
   const reduce = useReducedMotion();
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Per-star px offset from its scattered spot to the gather target. Starts at
+  // 0 (stable SSR / first paint) and is measured fresh on each hover-enter, so
+  // scroll / resize between hovers is always accounted for.
+  const [deltas, setDeltas] = useState(() => STARS.map(() => ({ dx: 0, dy: 0 })));
+
+  useEffect(() => {
+    if (!active || reduce) return;
+    const container = containerRef.current;
+    const target = targetRef?.current;
+    if (!container || !target) return;
+
+    const c = container.getBoundingClientRect();
+    const t = target.getBoundingClientRect();
+    const tx = t.left + t.width / 2 - c.left;
+    const ty = t.top + t.height / 2 - c.top;
+
+    setDeltas(
+      STARS.map((s) => ({
+        dx: tx - (c.width * (s.left / 100) + s.size / 2),
+        dy: ty - (c.height * (s.top / 100) + s.size / 2),
+      })),
+    );
+  }, [active, reduce, targetRef]);
+
   return (
     <div
+      ref={containerRef}
       aria-hidden
       className="absolute inset-0 z-0 hidden md:block pointer-events-none overflow-hidden"
       style={{ maskImage: MASK, WebkitMaskImage: MASK }}
     >
       {STARS.map((s, i) => (
-        <motion.img
+        // Outer layer drives the magnet (translate + shrink + fade); inner layer
+        // keeps its perpetual idle float untouched. Splitting them lets the
+        // gather use a single snappy spring both ways without disturbing — or
+        // having to restart — the looping float.
+        <motion.div
           key={`${s.slug}-${i}`}
-          src={`/icons/protocols/${s.slug}.png`}
-          alt=""
-          width={s.size}
-          height={s.size}
-          className="absolute object-contain select-none rounded-[22%]"
-          style={{
-            top: `${s.top}%`,
-            left: `${s.left}%`,
-            width: s.size,
-            height: s.size,
-            filter: "grayscale(0.15) brightness(1.15)",
-          }}
-          initial={{ opacity: s.opacity, y: 0 }}
+          className="absolute"
+          style={{ top: `${s.top}%`, left: `${s.left}%` }}
+          initial={false}
           animate={
-            reduce
-              ? { opacity: s.opacity }
-              : { opacity: [s.opacity, s.opacity * 1.5, s.opacity], y: [0, -s.drift, 0] }
+            active && !reduce
+              ? { x: deltas[i].dx, y: deltas[i].dy, scale: 0.18, opacity: 0 }
+              : { x: 0, y: 0, scale: 1, opacity: 1 }
           }
-          transition={
-            reduce
-              ? undefined
-              : { duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }
-          }
-        />
+          transition={{
+            type: "spring",
+            stiffness: 90,
+            damping: 18,
+            delay: active ? i * 0.012 : 0,
+          }}
+        >
+          <motion.img
+            src={`/icons/protocols/${s.slug}.png`}
+            alt=""
+            width={s.size}
+            height={s.size}
+            className="block object-contain select-none rounded-[22%]"
+            style={{
+              width: s.size,
+              height: s.size,
+              filter: "grayscale(0.15) brightness(1.15)",
+            }}
+            initial={{ opacity: s.opacity, y: 0 }}
+            animate={
+              reduce
+                ? { opacity: s.opacity }
+                : { opacity: [s.opacity, s.opacity * 1.5, s.opacity], y: [0, -s.drift, 0] }
+            }
+            transition={
+              reduce
+                ? undefined
+                : { duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }
+            }
+          />
+        </motion.div>
       ))}
     </div>
   );

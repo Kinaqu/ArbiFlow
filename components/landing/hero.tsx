@@ -12,6 +12,7 @@ import { ArrowRight, Lock } from "lucide-react";
 import { EngineVisual } from "./engine-visual";
 import { ProtocolConstellation } from "./protocol-constellation";
 import { RotatingProtocol } from "./rotating-protocol";
+import { LogoMark } from "./logo";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
@@ -75,9 +76,11 @@ const stats: { node: React.ReactNode; l: string }[] = [
 
 export function Hero() {
   const reduce = useReducedMotion();
+  const [attract, setAttract] = useState(false);
+  const squareRef = useRef<HTMLSpanElement>(null);
   return (
     <section className="relative overflow-hidden">
-      <ProtocolConstellation />
+      <ProtocolConstellation active={attract} targetRef={squareRef} />
 
       {/* Ambient aurora behind the headline */}
       <motion.div
@@ -148,10 +151,32 @@ export function Hero() {
               variants={item}
               className="mt-9 flex flex-wrap items-center gap-3"
             >
-              <ConnectButton size="md">
-                Connect wallet · scan &amp; deploy
-                <ArrowRight className="w-4 h-4" />
-              </ConnectButton>
+              <span
+                className="relative inline-flex"
+                onMouseEnter={() => setAttract(true)}
+                onMouseLeave={() => setAttract(false)}
+              >
+                {/* ArbiFlow square — the scattered background protocol logos
+                    gather into this mark on hover (see ProtocolConstellation). */}
+                <motion.span
+                  ref={squareRef}
+                  aria-hidden
+                  className="pointer-events-none absolute left-1/2 -top-14 -translate-x-1/2 flex items-center justify-center w-11 h-11 rounded-xl border border-border bg-surface/90 backdrop-blur-sm shadow-glow-gold"
+                  initial={false}
+                  animate={
+                    attract && !reduce
+                      ? { opacity: 1, scale: 1 }
+                      : { opacity: 0, scale: 0.6 }
+                  }
+                  transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                >
+                  <LogoMark size={26} />
+                </motion.span>
+                <ConnectButton size="md">
+                  Connect wallet · scan &amp; deploy
+                  <ArrowRight className="w-4 h-4" />
+                </ConnectButton>
+              </span>
               <a
                 href="#how"
                 className="btn-ghost inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-medium text-foreground"
