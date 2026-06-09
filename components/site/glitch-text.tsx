@@ -43,7 +43,7 @@ const GlitchText = React.forwardRef<HTMLDivElement, GlitchTextProps>(
           <motion.div
             className={cn(
               "text-6xl font-bold absolute",
-              "mix-blend-multiply dark:mix-blend-screen",
+              "mix-blend-screen",
               textClassName
             )}
             animate={{
@@ -65,7 +65,7 @@ const GlitchText = React.forwardRef<HTMLDivElement, GlitchTextProps>(
           <motion.div
             className={cn(
               "text-6xl font-bold absolute",
-              "mix-blend-multiply dark:mix-blend-screen",
+              "mix-blend-screen",
               textClassName
             )}
             animate={{
@@ -87,7 +87,7 @@ const GlitchText = React.forwardRef<HTMLDivElement, GlitchTextProps>(
           <motion.div
             className={cn(
               "text-6xl font-bold",
-              "mix-blend-multiply dark:mix-blend-screen",
+              "mix-blend-screen",
               textClassName
             )}
             animate={{

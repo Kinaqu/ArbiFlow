@@ -20,7 +20,11 @@ export function MobileGate() {
       <div className="text-[11px] font-mono uppercase tracking-widest text-muted">
         arbiflow · desktop experience
       </div>
-      <GlitchText text="DESKTOP ONLY" textClassName="text-4xl sm:text-5xl" />
+      <GlitchText
+        text="DESKTOP ONLY"
+        textClassName="text-4xl sm:text-5xl"
+        colors={{ red: "#FFFFFF", green: "#FFFFFF", blue: "#FFFFFF" }}
+      />
       <p className="max-w-xs text-muted-strong leading-relaxed">
         The ArbiFlow landing is built around motion that needs a big screen.
         Open it on desktop — or jump straight into the app, which works great on
