@@ -5,6 +5,7 @@ import { cookieToInitialState } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi";
 import { Providers } from "./providers";
 import { Nav } from "@/components/landing/nav";
+import { MobileGate } from "@/components/site/mobile-gate";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,6 +51,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers initialState={initialState}>
           <Nav />
+          <MobileGate />
           {children}
         </Providers>
       </body>
