@@ -74,6 +74,13 @@ export const VAULT_ABI = [
   },
   {
     type: "function",
+    name: "owner",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
     name: "keeper",
     stateMutability: "view",
     inputs: [],

@@ -2,14 +2,15 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { ShieldCheck, Loader2 } from "lucide-react";
-import { useSiwe } from "@/hooks/use-siwe";
+import { useSiwe, type SiweToken } from "@/hooks/use-siwe";
 
 type OwnershipValue = {
   address?: `0x${string}`;
   verified: boolean;
   pending: boolean;
   error: string | null;
-  verify: () => Promise<boolean>;
+  verify: () => Promise<SiweToken | null>;
+  authToken: SiweToken | null;
 };
 
 const OwnershipContext = createContext<OwnershipValue | null>(null);

@@ -8,6 +8,7 @@ import {
   type KeeperTickResult,
 } from "@/lib/demo-score";
 import { buildMove } from "@/lib/vault-calls";
+import { requireVaultOwner, type AuthToken } from "@/lib/api-auth";
 import {
   ensureFloat,
   gasPrice,
@@ -36,7 +37,7 @@ function parseOverride(raw: unknown): DecisionOverride | undefined {
 }
 
 export async function POST(request: Request) {
-  let body: { vault?: string; approved?: unknown; override?: unknown };
+  let body: { vault?: string; approved?: unknown; override?: unknown; auth?: AuthToken };
   try {
     body = await request.json();
   } catch {
@@ -47,6 +48,13 @@ export async function POST(request: Request) {
   if (!vault || !isAddress(vault)) {
     return NextResponse.json({ error: "bad_vault" }, { status: 400 });
   }
+
+  // Only the vault's owner may move its funds (the public demo vault is exempt).
+  const auth = await requireVaultOwner(vault, body.auth, request.headers.get("host"));
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const approved = (Array.isArray(body.approved) ? body.approved : []).filter(
     (k): k is ProtocolKey => typeof k === "string" && KEYS.has(k),
   );

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { fetchArbitrumPools } from "@/lib/llama";
 import { scorePool, type ScoredPool } from "@/lib/score";
+import { withPublicApi, corsPreflight } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
-export const revalidate = 300;
+// API-key gating reads request headers, so the route is dynamic. The heavy
+// upstream pool fetch stays cached in lib/llama (next: { revalidate: 300 }), and
+// the response keeps its CDN cache-control hint.
+export const dynamic = "force-dynamic";
 
 export type OpportunitiesApiResponse = {
   pools: ScoredPool[];
@@ -11,7 +15,7 @@ export type OpportunitiesApiResponse = {
   source: "live" | "snapshot";
 };
 
-export async function GET() {
+export const GET = withPublicApi(async () => {
   try {
     const { pools, source, generatedAt } = await fetchArbitrumPools();
     const scored = pools
@@ -37,4 +41,8 @@ export async function GET() {
       { status: 502 },
     );
   }
+});
+
+export function OPTIONS() {
+  return corsPreflight();
 }

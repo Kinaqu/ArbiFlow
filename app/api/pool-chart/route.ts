@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { withPublicApi, corsPreflight } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
-export const revalidate = 3600;
+// API-key gating makes this dynamic; the upstream chart fetch below stays cached
+// via its own `next: { revalidate: 3600 }`.
+export const dynamic = "force-dynamic";
 
 type LlamaChart = {
   status?: string;
@@ -11,7 +14,7 @@ type LlamaChart = {
 export type PoolChartPoint = { t: number; apy: number; tvlUsd: number };
 export type PoolChartResponse = { points: PoolChartPoint[] };
 
-export async function GET(request: Request) {
+export const GET = withPublicApi(async (request: Request) => {
   const id = new URL(request.url).searchParams.get("id");
   // DeFiLlama pool ids are uuids — validate to avoid passing arbitrary paths.
   if (!id || !/^[a-zA-Z0-9-]+$/.test(id)) {
@@ -43,4 +46,8 @@ export async function GET(request: Request) {
     console.error("[pool-chart] DeFiLlama chart fetch failed:", err);
     return NextResponse.json({ error: "pool_chart_failed" }, { status: 502 });
   }
+});
+
+export function OPTIONS() {
+  return corsPreflight();
 }

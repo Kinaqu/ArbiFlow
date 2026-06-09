@@ -8,9 +8,10 @@ import {
   type OpportunitiesResponse,
 } from "@/lib/opportunities";
 import type { OpportunitiesApiResponse } from "@/app/api/opportunities/route";
+import { publishableApiHeaders } from "@/lib/api-key";
 
 async function fetchOpportunities(): Promise<OpportunitiesApiResponse> {
-  const res = await fetch("/api/opportunities");
+  const res = await fetch("/api/opportunities", { headers: publishableApiHeaders() });
   if (!res.ok) {
     throw new Error(`opportunities failed (${res.status})`);
   }
