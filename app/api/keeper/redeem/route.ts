@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAddress } from "viem";
 import { buildMove, type FundLocation } from "@/lib/vault-calls";
+import { requireVaultOwner, type AuthToken } from "@/lib/api-auth";
 import { ensureFloat, keeperByAddress, readVault, signAndSubmit, withVaultLock } from "@/lib/keeper-signer";
 
 // Backs the user's withdraw: the keeper redeems any deployed position back to
@@ -18,7 +19,7 @@ export type RedeemResponse = {
 };
 
 export async function POST(request: Request) {
-  let body: { vault?: string };
+  let body: { vault?: string; auth?: AuthToken };
   try {
     body = await request.json();
   } catch {
@@ -28,6 +29,12 @@ export async function POST(request: Request) {
   const vault = body.vault;
   if (!vault || !isAddress(vault)) {
     return NextResponse.json({ error: "bad_vault" }, { status: 400 });
+  }
+
+  // Only the vault's owner may redeem its position (the public demo vault is exempt).
+  const auth = await requireVaultOwner(vault, body.auth, request.headers.get("host"));
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   try {

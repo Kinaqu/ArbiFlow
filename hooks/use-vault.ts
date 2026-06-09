@@ -18,6 +18,8 @@ import {
   type ProtocolKey,
 } from "@/lib/testnet";
 import { FACTORY_ABI, VAULT_ABI, MINT_ABI } from "@/lib/testnet-abi";
+import { useSiwe, type SiweToken } from "@/hooks/use-siwe";
+import { publishableApiHeaders } from "@/lib/api-key";
 import type { FundLocation } from "@/lib/vault-calls";
 import {
   DECISION_MS,
@@ -274,7 +276,9 @@ export function useVault() {
     enabled: !!state.vault,
     staleTime: Infinity,
     queryFn: async (): Promise<`0x${string}` | null> => {
-      const res = await fetch(`/api/keeper/address?vault=${state.vault}`);
+      const res = await fetch(`/api/keeper/address?vault=${state.vault}`, {
+        headers: publishableApiHeaders(),
+      });
       if (!res.ok) return null;
       const { address: a } = (await res.json()) as { address?: `0x${string}` };
       return a ?? null;
@@ -319,18 +323,37 @@ export function useVault() {
     [gasPrice],
   );
 
+  // Wallet-ownership session token (SIWE). Sent with fund-moving keeper calls so
+  // the server confirms the caller owns this vault before rebalancing/redeeming.
+  // Signed once via the ownership banner; the ~24h token then rides every tick.
+  const { authToken, verify: verifyOwnership } = useSiwe();
+
   // Refs keep the heartbeat callbacks free of stale closures. Synced in an
   // effect (never during render) so they reflect the latest commit.
   const stateRef = useRef(state);
   const approvedRef = useRef(approved);
   const keeperRef = useRef(keeperAddress);
   const refetchRef = useRef(refetch);
+  const authTokenRef = useRef(authToken);
+  const verifyRef = useRef(verifyOwnership);
   useEffect(() => {
     stateRef.current = state;
     approvedRef.current = approved;
     keeperRef.current = keeperAddress;
     refetchRef.current = refetch;
+    authTokenRef.current = authToken;
+    verifyRef.current = verifyOwnership;
   });
+
+  // Ensure a valid ownership token, prompting a one-time signature if missing.
+  // Mutates the ref immediately so a call made right after (postTick/redeem) sees
+  // it without waiting for the next render's ref sync.
+  const ensureAuth = useCallback(async (): Promise<SiweToken | null> => {
+    if (authTokenRef.current) return authTokenRef.current;
+    const token = await verifyRef.current();
+    if (token) authTokenRef.current = token;
+    return token;
+  }, []);
 
   const approve = useCallback((key: ProtocolKey) => {
     const vault = stateRef.current.vault;
@@ -400,7 +423,9 @@ export function useVault() {
 
   // The keeper a specific vault should delegate to (sharded server-side).
   const resolveKeeper = useCallback(async (vault: `0x${string}`): Promise<`0x${string}`> => {
-    const res = await fetch(`/api/keeper/address?vault=${vault}`);
+    const res = await fetch(`/api/keeper/address?vault=${vault}`, {
+      headers: publishableApiHeaders(),
+    });
     if (!res.ok) throw new Error("Keeper backend unavailable — set KEEPER_MNEMONIC on the server.");
     const { address: a } = (await res.json()) as { address?: `0x${string}` };
     if (!a) throw new Error("Keeper backend unavailable.");
@@ -567,10 +592,12 @@ export function useVault() {
         if (!vault) throw new Error("No vault");
 
         if (location !== "idle" && location !== "empty") {
+          const auth = await ensureAuth();
+          if (!auth) throw new Error("Sign the ownership message to authorize the withdrawal");
           const res = await fetch("/api/keeper/redeem", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ vault }),
+            body: JSON.stringify({ vault, auth }),
           });
           const data = (await res.json()) as {
             redeemed?: boolean;
@@ -602,7 +629,7 @@ export function useVault() {
           );
         }
       }),
-    [withOp, track, logTx, writeContractAsync, address, publicClient],
+    [withOp, track, logTx, writeContractAsync, address, publicClient, ensureAuth],
   );
 
   // Non-custodial escape hatch: sweep every vault token — and any leftover
@@ -665,6 +692,7 @@ export function useVault() {
           vault: s.vault,
           approved: approvedRef.current,
           ...(override ? { override } : {}),
+          ...(authTokenRef.current ? { auth: authTokenRef.current } : {}),
         }),
       });
       if (!res.ok) {
@@ -714,6 +742,8 @@ export function useVault() {
       setError(null);
       setPending(name);
       try {
+        const auth = await ensureAuth();
+        if (!auth) throw new Error("Sign the ownership message to run the demo move");
         await postTick(override);
       } catch (e) {
         setError(short(e));
@@ -721,7 +751,7 @@ export function useVault() {
         setPending(null);
       }
     },
-    [postTick],
+    [postTick, ensureAuth],
   );
 
   const demoMove = useCallback(() => {
@@ -740,10 +770,11 @@ export function useVault() {
 
   const demoHold = useCallback(() => runDemo("demoHold", { kind: "hold" }), [runDemo]);
 
-  // Eligible to auto-rebalance only when delegated, funded, with an approval and
-  // enough reserve ETH to cover the next move (else it waits for a top-up).
+  // Eligible to auto-rebalance only when delegated, funded, with an approval,
+  // enough reserve ETH to cover the next move (else it waits for a top-up), and a
+  // valid ownership token (so the server-authorized tick never prompts mid-loop).
   const eligible =
-    delegated && state.activeAmount > ZERO && approved.length > 0 && hasGas;
+    delegated && state.activeAmount > ZERO && approved.length > 0 && hasGas && !!authToken;
 
   useEffect(() => {
     if (!eligible) return;

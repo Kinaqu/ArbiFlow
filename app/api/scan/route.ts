@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { scanWallet } from "@/lib/scan";
+import { withPublicApi, corsPreflight } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export const GET = withPublicApi(async (request: Request) => {
   const url = new URL(request.url);
   const address = url.searchParams.get("address");
 
@@ -25,4 +26,8 @@ export async function GET(request: Request) {
     const status = message === "invalid_address" ? 400 : 502;
     return NextResponse.json({ error: message }, { status });
   }
+});
+
+export function OPTIONS() {
+  return corsPreflight();
 }

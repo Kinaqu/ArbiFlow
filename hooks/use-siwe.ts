@@ -7,19 +7,32 @@ import { buildSiweMessage, verifySiwe } from "@/lib/siwe";
 const keyFor = (a: string) => `arbiflow:siwe:${a.toLowerCase()}`;
 const CHANGED_EVENT = "arbiflow:siwe-changed";
 
-function readVerified(address?: string): boolean {
-  if (!address || typeof window === "undefined") return false;
+/** The token sent with fund-moving keeper calls; the server re-verifies it. */
+export type SiweToken = { message: string; signature: `0x${string}` };
+
+type Stored = { message: string; signature: `0x${string}`; expiresAt: string };
+
+function rawFor(address?: string): string | null {
+  if (!address || typeof window === "undefined") return null;
+  return localStorage.getItem(keyFor(address));
+}
+
+/** Parse the stored token, returning null if absent, malformed, or expired. */
+function parseToken(raw: string | null): SiweToken | null {
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(keyFor(address));
-    return !!raw && JSON.parse(raw).verified === true;
+    const v = JSON.parse(raw) as Partial<Stored>;
+    if (!v.message || !v.signature || !v.expiresAt) return null;
+    if (Date.parse(v.expiresAt) <= Date.now()) return null;
+    return { message: v.message, signature: v.signature };
   } catch {
-    return false;
+    return null;
   }
 }
 
-// localStorage is an external store — subscribe so the verified flag re-reads
-// after verify() writes (same-tab) or another tab changes it. This keeps the
-// banner and execute buttons in sync without a setState-in-effect.
+// localStorage is an external store — subscribe so the token re-reads after
+// verify() writes (same-tab) or another tab changes it. Keeps the banner and
+// execute buttons in sync without a setState-in-effect.
 function subscribe(cb: () => void) {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", cb);
@@ -38,18 +51,25 @@ export function useSiwe() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const verified = useSyncExternalStore(
+  // Re-renders when the stored token changes; the raw string is a stable
+  // snapshot (Object.is-equal across reads while unchanged).
+  const raw = useSyncExternalStore(
     subscribe,
-    () => readVerified(address),
-    () => false,
+    () => rawFor(address),
+    () => null,
   );
+  const authToken = parseToken(raw);
+  const verified = !!authToken;
 
-  const verify = useCallback(async (): Promise<boolean> => {
-    if (!address) return false;
+  // Sign the SIWE challenge once; the {message, signature} becomes a ~24h session
+  // token the server checks against the vault's on-chain owner. Returns the token
+  // so callers can use it immediately without waiting for the store to settle.
+  const verify = useCallback(async (): Promise<SiweToken | null> => {
+    if (!address) return null;
     setError(null);
     setPending(true);
     try {
-      const { message, issuedAt } = buildSiweMessage({
+      const { message, expiresAt } = buildSiweMessage({
         address,
         chainId,
         domain: window.location.host,
@@ -58,21 +78,16 @@ export function useSiwe() {
       const signature = await signMessageAsync({ message });
       const ok = await verifySiwe(message, signature, address);
       if (!ok) throw new Error("Signature did not match the connected wallet");
-      localStorage.setItem(
-        keyFor(address),
-        JSON.stringify({ verified: true, issuedAt }),
-      );
+      localStorage.setItem(keyFor(address), JSON.stringify({ message, signature, expiresAt }));
       window.dispatchEvent(new Event(CHANGED_EVENT));
-      return true;
+      return { message, signature };
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message.split("\n")[0] : "Verification failed",
-      );
-      return false;
+      setError(e instanceof Error ? e.message.split("\n")[0] : "Verification failed");
+      return null;
     } finally {
       setPending(false);
     }
   }, [address, chainId, signMessageAsync]);
 
-  return { address, verified, pending, error, verify };
+  return { address, verified, pending, error, verify, authToken };
 }

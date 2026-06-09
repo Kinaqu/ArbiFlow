@@ -9,6 +9,8 @@
 // This file is framework-neutral (no "use client", no React) so it is safe to
 // import from both client hooks and the server route.
 
+import { publishableApiHeaders } from "./api-key";
+
 export const ARBITRUM_CHAIN_ID = 42161;
 export const DEFAULT_SLIPPAGE_BPS = 50; // 0.5%
 
@@ -47,7 +49,7 @@ export async function getRoute(args: GetRouteArgs): Promise<EnsoRouteResult> {
   try {
     const res = await fetch("/api/execute-route", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...publishableApiHeaders() },
       body: JSON.stringify(args),
     });
     const body = (await res.json().catch(() => null)) as EnsoRouteResult | null;

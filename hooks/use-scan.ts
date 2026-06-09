@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { ScanResult } from "@/lib/scan";
+import { publishableApiHeaders } from "@/lib/api-key";
 
 async function fetchScan(address: string): Promise<ScanResult> {
-  const res = await fetch(`/api/scan?address=${address}`);
+  const res = await fetch(`/api/scan?address=${address}`, { headers: publishableApiHeaders() });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `scan failed (${res.status})`);

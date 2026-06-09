@@ -19,8 +19,8 @@ const cols: { title: string; items: Item[] }[] = [
   {
     title: "Resources",
     items: [
-      { label: "Docs", href: "/docs" },
-      { label: "API", href: "/api-docs" },
+      { label: "User docs", href: "/docs" },
+      { label: "Developer API", href: "/api-docs" },
       { label: "Methodology", href: "/methodology" },
       { label: "Architecture", href: "/architecture" },
     ],

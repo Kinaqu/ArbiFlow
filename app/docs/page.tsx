@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Cpu, Gauge, ShieldAlert, Code2, Layers } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Cpu,
+  Gauge,
+  ShieldAlert,
+  ShieldCheck,
+  Layers,
+  Code2,
+} from "lucide-react";
 import { PageShell, PageHeader, Section } from "@/components/site/page-shell";
 
 export const metadata: Metadata = {
-  title: "Docs — ArbiFlow",
+  title: "User docs — ArbiFlow",
   description:
-    "Quickstart, concepts, and reference for ArbiFlow — the Arbitrum-native decision engine for idle DeFi capital.",
+    "How to use ArbiFlow: connect a wallet, scan idle capital, deploy into ranked strategies, and how the non-custodial vault keeps your funds yours.",
 };
 
 const concepts = [
@@ -29,12 +38,6 @@ const concepts = [
     body: "Data sources, the pool-to-score transform, refresh cadence, known limits.",
   },
   {
-    icon: Code2,
-    title: "API reference",
-    href: "/api-docs",
-    body: "Read-only HTTP endpoints for wallet scans and ranked pools.",
-  },
-  {
     icon: Layers,
     title: "Architecture",
     href: "/architecture",
@@ -52,43 +55,41 @@ export default function DocsPage() {
   return (
     <PageShell>
       <PageHeader
-        section="[D] · Docs"
+        section="[D] · User docs"
         title={
           <>
-            Read what the engine is{" "}
-            <span className="gradient-text-gold">actually doing.</span>
+            Put your idle capital{" "}
+            <span className="gradient-text-gold">to work.</span>
           </>
         }
-        subtitle="Five minutes to understand the scoring loop end-to-end. No marketing copy — just the inputs, the math, and the trade-offs you should know about before deploying."
+        subtitle="Everything you need to use ArbiFlow end to end — connect, scan, deploy, and withdraw — plus exactly why your funds stay yours the whole time. Building on the data instead? See the developer API."
       />
 
       <Section number="01" label="Quickstart" title="Get a wallet scored in under a minute.">
         <div className="lg:col-span-7 space-y-5 text-muted-strong leading-relaxed">
           <ol className="list-decimal pl-5 space-y-3">
             <li>
-              Open <span className="text-foreground">arbiflow.xyz</span> and
-              click <span className="text-foreground">Connect wallet</span> —
-              MetaMask, WalletConnect, or any injected provider works.
+              Open the app and click{" "}
+              <span className="text-foreground">Connect wallet</span> — MetaMask,
+              WalletConnect, or any injected provider works.
             </li>
+            <li>Confirm the connection. No signature required just to look around.</li>
             <li>
-              Confirm the connection. No signature required for scanning.
-            </li>
-            <li>
-              The dashboard at <span className="font-mono">/app</span> reads
-              your balances across Arbitrum, Base and Optimism, totals your idle
+              The dashboard at <span className="font-mono">/app</span> reads your
+              balances across Arbitrum, Base and Optimism, totals your idle
               capital, and surfaces ranked strategies.
             </li>
             <li>
               When you find a strategy worth running, hit{" "}
-              <span className="text-foreground">Deploy</span>. ArbiFlow builds
-              the tx in-browser; you sign with your wallet.
+              <span className="text-foreground">Deploy</span>. ArbiFlow builds the
+              transaction in-browser; you sign it with your wallet.
             </li>
           </ol>
           <p className="text-sm text-muted">
-            Prefer no-connect demo? Append{" "}
+            Prefer a no-connect demo? Append{" "}
             <span className="font-mono">?address=0x…</span> to{" "}
-            <span className="font-mono">/app</span> for a read-only view of
-            any wallet.
+            <span className="font-mono">/app</span> for a read-only view of any
+            wallet.
           </p>
         </div>
         <div className="lg:col-span-5">
@@ -120,7 +121,78 @@ export default function DocsPage() {
         </div>
       </Section>
 
-      <Section number="02" label="Concepts" title="Read these before you deploy anything.">
+      <Section number="02" label="The vault" title="Auto-rebalancing, on testnet.">
+        <div className="lg:col-span-7 space-y-5 text-muted-strong leading-relaxed">
+          <p>
+            On Arbitrum Sepolia you can open a personal{" "}
+            <span className="text-foreground">delegation vault</span> that
+            auto-rebalances into the top-scoring pool for you:
+          </p>
+          <ol className="list-decimal pl-5 space-y-3">
+            <li>
+              <span className="text-foreground">Create your vault</span> and verify
+              wallet ownership with a one-time signature.
+            </li>
+            <li>
+              <span className="text-foreground">Approve</span> which protocols
+              ArbiFlow may route into — it can never touch any you haven&apos;t
+              allowed.
+            </li>
+            <li>
+              <span className="text-foreground">Deposit</span> test USDC and top up
+              a small ETH gas reserve (it pays for your rebalances; reclaim it any
+              time).
+            </li>
+            <li>
+              ArbiFlow&apos;s keeper then moves your funds to the leading approved
+              pool as scores change. Hit{" "}
+              <span className="text-foreground">Withdraw</span> to pull everything
+              back to your wallet whenever you like.
+            </li>
+          </ol>
+        </div>
+        <div className="lg:col-span-5">
+          <div className="rounded-xl border border-border bg-surface p-6">
+            <ShieldCheck className="w-5 h-5 text-mint mb-3" />
+            <div className="text-base font-medium mb-2">Force exit, always</div>
+            <p className="text-sm text-muted-strong leading-relaxed">
+              An <span className="font-mono">emergencyWithdraw</span> sweeps every
+              token straight back to you on-chain — even if ArbiFlow&apos;s keeper
+              is offline. You are never locked in.
+            </p>
+          </div>
+        </div>
+      </Section>
+
+      <Section number="03" label="Safety" title="Your funds stay yours.">
+        <div className="lg:col-span-12 grid sm:grid-cols-2 gap-3">
+          {[
+            [
+              "Non-custodial by design",
+              "Funds live in a vault that only you own. Withdraw is owner-only — ArbiFlow's keeper, and anyone else, is technically unable to move funds out to any address but yours.",
+            ],
+            [
+              "You sign everything that matters",
+              "Connecting is free; deposits, withdrawals and approvals are signed by your wallet. A one-time Sign-In With Ethereum proves ownership before the vault will auto-rebalance.",
+            ],
+            [
+              "Rebalances can't lose value",
+              "The keeper may only move funds between protocols you approved, and the contract rejects any rebalance that would drop your portfolio's value beyond a small slippage bound.",
+            ],
+            [
+              "No one can move your money",
+              "Every fund-moving request is checked against your vault's on-chain owner. A stranger cannot rebalance, redeem, or drain your vault — the request is simply refused.",
+            ],
+          ].map(([title, body]) => (
+            <div key={title} className="rounded-xl border border-border bg-surface p-6">
+              <div className="text-base font-medium mb-2">{title}</div>
+              <p className="text-sm text-muted-strong leading-relaxed">{body}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section number="04" label="Concepts" title="Read these before you deploy anything.">
         <div className="lg:col-span-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {concepts.map((c) => {
             const Icon = c.icon;
@@ -143,7 +215,7 @@ export default function DocsPage() {
         </div>
       </Section>
 
-      <Section number="03" label="Glossary" title="Terms that show up in scores.">
+      <Section number="05" label="Glossary" title="Terms that show up in scores.">
         <div className="lg:col-span-12">
           <dl className="divide-y hairline border-y hairline">
             {[
@@ -178,6 +250,27 @@ export default function DocsPage() {
               </div>
             ))}
           </dl>
+        </div>
+      </Section>
+
+      <Section>
+        <div className="lg:col-span-12">
+          <Link
+            href="/api-docs"
+            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-6 hover:border-border-strong transition-colors group"
+          >
+            <div className="flex items-start gap-4 min-w-0">
+              <Code2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="text-base font-medium">Building on ArbiFlow?</div>
+                <p className="text-sm text-muted leading-relaxed">
+                  The open developer API — wallet scans, scored pools and APY/TVL
+                  history, with keys, rate limits and CORS.
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors flex-shrink-0" />
+          </Link>
         </div>
       </Section>
     </PageShell>

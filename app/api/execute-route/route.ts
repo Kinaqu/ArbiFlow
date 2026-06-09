@@ -5,6 +5,7 @@ import {
   type EnsoRouteResult,
   type GetRouteArgs,
 } from "@/lib/enso";
+import { withPublicApi, corsPreflight } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -124,7 +125,7 @@ async function resolveTokenOut(
   return resolved;
 }
 
-export async function POST(request: Request) {
+export const POST = withPublicApi(async (request: Request) => {
   if (!API_KEY) {
     // Not configured — let the client fall back to the protocol deep-link.
     const out: EnsoRouteResult = {
@@ -213,4 +214,8 @@ export async function POST(request: Request) {
       reason: err instanceof Error ? err.message : "Route failed",
     } satisfies EnsoRouteResult);
   }
+});
+
+export function OPTIONS() {
+  return corsPreflight();
 }
