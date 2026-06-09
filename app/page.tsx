@@ -3,6 +3,7 @@ import { Hero } from "@/components/landing/hero";
 import { Problem } from "@/components/landing/problem";
 import { Formula } from "@/components/landing/formula";
 import { HowItWorks } from "@/components/landing/how-it-works";
+import { WhatsReal } from "@/components/landing/whats-real";
 import { Opportunities } from "@/components/landing/opportunities";
 import { RiskModel } from "@/components/landing/risk-model";
 import { Protocols } from "@/components/landing/protocols";
@@ -20,6 +21,7 @@ const stacked = [
   Problem,
   Formula,
   HowItWorks,
+  WhatsReal,
   Opportunities,
   RiskModel,
   Protocols,
