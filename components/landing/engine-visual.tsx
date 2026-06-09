@@ -1,10 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Wallet, ArrowUpRight, ArrowRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useAppKit } from "@reown/appkit/react";
-import { useAccount } from "wagmi";
+import { Wallet, ArrowUpRight } from "lucide-react";
 import { PROTOCOL_COUNT } from "@/lib/constants";
 
 const tokens = [
@@ -31,9 +28,6 @@ const scoreFactors = [
 ];
 
 export function EngineVisual() {
-  const router = useRouter();
-  const { open } = useAppKit();
-  const { isConnected } = useAccount();
   return (
     <div className="relative w-full max-w-[520px] mx-auto">
       {/* Corner crosshairs (terminal feel) */}
@@ -272,31 +266,21 @@ export function EngineVisual() {
               "radial-gradient(ellipse 280px 120px at 90% 0%, rgba(244, 181, 63, 0.14), transparent 70%)",
           }}
         />
-        <div className="relative flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-gold/90 mb-1.5">
-              ready to deploy
-            </div>
-            <div className="text-sm text-foreground truncate">
-              <span className="font-mono tabular font-medium">1,840 USDC</span>
-              <span className="text-muted mx-1.5">→</span>
-              <span className="font-medium">Aave v3</span>
-            </div>
-            <div className="text-[10px] font-mono text-muted mt-1">
-              net APY <span className="text-foreground">4.31%</span>
-              <span className="mx-1.5">·</span>
-              <span className="text-mint">+$184/yr</span>
-              <span className="mx-1.5">·</span>1 signature
-            </div>
+        <div className="relative">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-gold/90 mb-1.5">
+            ready to deploy
           </div>
-          <button
-            type="button"
-            onClick={() => (isConnected ? router.push("/app") : open())}
-            className="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white whitespace-nowrap flex-shrink-0"
-          >
-            Deploy
-            <ArrowRight className="w-3 h-3" />
-          </button>
+          <div className="text-sm text-foreground">
+            <span className="font-mono tabular font-medium">1,840 USDC</span>
+            <span className="text-muted mx-1.5">→</span>
+            <span className="font-medium">Aave v3</span>
+          </div>
+          <div className="text-[10px] font-mono text-muted mt-1">
+            net APY <span className="text-foreground">4.31%</span>
+            <span className="mx-1.5">·</span>
+            <span className="text-mint">+$184/yr</span>
+            <span className="mx-1.5">·</span>1 signature
+          </div>
         </div>
       </motion.div>
     </div>

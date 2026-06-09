@@ -8,7 +8,7 @@ import {
   useReducedMotion,
   type Variants,
 } from "framer-motion";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { EngineVisual } from "./engine-visual";
 import { ProtocolConstellation } from "./protocol-constellation";
 import { RotatingProtocol } from "./rotating-protocol";
@@ -183,10 +183,6 @@ export function Hero() {
               >
                 See how it works
               </a>
-              <div className="flex items-center gap-1.5 text-xs text-muted ml-1">
-                <Lock className="w-3.5 h-3.5" />
-                Non‑custodial · you sign every tx
-              </div>
             </motion.div>
 
             {/* Stat strip — anchored under the copy as a spec line */}
