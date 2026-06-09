@@ -12,25 +12,25 @@ const endpoints = [
     method: "GET",
     path: "/api/scan",
     params: "?address=0x…",
-    desc: "Top-20 token balances + idle classification for a single Arbitrum address.",
+    desc: "Token balances + idle classification across Arbitrum, Base & Optimism.",
   },
   {
     method: "GET",
-    path: "/api/strategies",
-    params: "?token=USDC&size=2500",
-    desc: "Ranked strategy list for a given token and wallet size (Phase 2+).",
+    path: "/api/opportunities",
+    params: "—",
+    desc: "Curated + honorable Arbitrum pools, each scored 0–100 and ranked. Cached 5 min.",
   },
   {
     method: "GET",
-    path: "/api/score",
-    params: "?protocol=aave-v3&token=USDC",
-    desc: "Full breakdown of a single protocol/token score: APY, risk, gas, IL (Phase 2+).",
+    path: "/api/pool-chart",
+    params: "?id=<pool-uuid>",
+    desc: "Up to 90 days of APY & TVL history for one DeFiLlama pool.",
   },
   {
     method: "GET",
-    path: "/api/history",
-    params: "?protocol=aave-v3&token=USDC&days=30",
-    desc: "Time-series of net APY and risk score for the last N days (Phase 3+).",
+    path: "/api/keeper/address",
+    params: "?vault=0x…",
+    desc: "The keeper a testnet vault should delegate to (sharded per vault).",
   },
 ];
 
@@ -74,6 +74,14 @@ export default function ApiDocsPage() {
               ))}
             </ul>
           </div>
+          <p className="mt-4 text-xs text-muted leading-relaxed">
+            The dashboard&apos;s deposit and the testnet vault also call{" "}
+            <span className="font-mono">POST /api/execute-route</span>,{" "}
+            <span className="font-mono">/api/keeper/tick</span> and{" "}
+            <span className="font-mono">/api/keeper/redeem</span> — these take
+            signed or server-side params and aren&apos;t part of the read-only
+            surface.
+          </p>
         </div>
       </Section>
 

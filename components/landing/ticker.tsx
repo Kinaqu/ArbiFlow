@@ -17,9 +17,9 @@ export function Ticker() {
       <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
       <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full bg-gold" />
         <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
-          live · arbitrum
+          sample · arbitrum
         </span>
       </div>
       <div className="flex animate-scroll-x py-3 whitespace-nowrap">

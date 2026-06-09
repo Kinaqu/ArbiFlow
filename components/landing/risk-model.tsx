@@ -2,118 +2,122 @@
 
 import { motion } from "framer-motion";
 
-const lanes = [
+// The score's resilience factors (lib/score.ts). ArbiFlow doesn't bolt on a
+// separate risk grade — safety is baked into the 100-point composite: 60 of the
+// points reward depth, trust, stable assets and a holding forecast; the other
+// 40 reward raw APY.
+const factors = [
   {
-    weight: 30,
-    label: "Protocol risk",
-    sub: "Audit depth · TVL · age · history",
+    pts: 20,
+    label: "TVL",
+    sub: "Pool depth",
     detail:
-      "We blend signals from DefiSafety, OpenZeppelin, and on-chain exploit data. Brand new contracts start at zero credit.",
+      "Total value locked, log-scaled to $100M. Deeper, harder-to-move liquidity means lower exit risk and scores higher.",
     color: "#2F7BFF",
   },
   {
-    weight: 25,
-    label: "Market volatility",
-    sub: "Asset σ · yield variance",
+    pts: 15,
+    label: "Trust",
+    sub: "Protocol tier",
     detail:
-      "30-day realized volatility, weighted by the share of your position in volatile assets. Stablecoins barely move the needle.",
+      "Curated blue-chip protocols (Aave, Uniswap, GMX, Pendle…) get full marks; honorable-mention pools earn partial credit.",
     color: "#F4B53F",
   },
   {
-    weight: 25,
-    label: "Liquidity",
-    sub: "Pool depth · exit cost",
+    pts: 15,
+    label: "Stability",
+    sub: "Asset + IL",
     detail:
-      "Slippage on a hypothetical 100% exit. Thin pools that look great on paper get marked down hard.",
-    color: "#34E0A1",
+      "Stablecoin pools with no impermanent-loss exposure score highest — no price risk, no LP divergence.",
+    color: "#6FA5FF",
   },
   {
-    weight: 20,
-    label: "Execution cost",
-    sub: "Gas · MEV · rebalancing",
+    pts: 10,
+    label: "Forecast",
+    sub: "Yield outlook",
     detail:
-      "Simulated entry, weekly rebalance, and exit at current Arbitrum gas. Net APY is APY minus this.",
-    color: "#FF5A6B",
+      "DeFiLlama's Stable/Up probability that the pool's yield holds rather than decaying.",
+    color: "#FF8A3F",
   },
+];
+
+const notModeled = [
+  "Audit scoring — we curate by protocol, we don't grade audits",
+  "Per-asset volatility (σ) and price prediction",
+  "Gas or impermanent-loss simulation per position",
+  "Withdrawal queues / cooldown latency",
 ];
 
 export function RiskModel() {
   return (
     <section id="risk" className="relative">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 py-12 lg:py-16">
-        <div className="grid lg:grid-cols-12 gap-12 mb-16">
+        <div className="grid lg:grid-cols-12 gap-12 mb-12">
           <div className="lg:col-span-5">
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted mb-4">
               [05] · The risk model
             </div>
             <h2 className="text-3xl lg:text-5xl tracking-[-0.03em] font-semibold leading-[1.05]">
-              Four lanes. <span className="text-muted">Fixed weights.</span>
+              Risk is <span className="text-muted">in the score.</span>
             </h2>
           </div>
           <div className="lg:col-span-7 lg:pl-12 lg:border-l hairline">
             <p className="text-lg text-muted-strong leading-relaxed">
-              Every score subtracts a weighted blend of four risk dimensions
-              from raw return — the same formula across every protocol.
-              Disagree with a weight? The breakdown is right there to argue
-              against.
+              No separate risk grade bolted on after the fact. Resilience is
+              built into the 100-point score: <span className="text-foreground">60
+              points</span> reward depth, blue-chip trust, stable assets and a
+              holding forecast — the other 40 reward raw yield.
             </p>
           </div>
         </div>
 
-        {/* Weighted lanes - horizontal stacked */}
-        <div className="space-y-3">
-          {/* Weight bar */}
-          <div className="flex h-2 rounded-full overflow-hidden border border-border">
-            {lanes.map((l, i) => (
-              <motion.div
-                key={l.label}
-                initial={{ width: 0 }}
-                whileInView={{ width: `${l.weight}%` }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ delay: i * 0.1, duration: 0.6 }}
-                style={{ background: l.color }}
-              />
-            ))}
-          </div>
+        {/* Resilience factors */}
+        <div className="grid grid-cols-12 gap-px bg-border border border-border rounded-xl overflow-hidden">
+          {factors.map((f, i) => (
+            <motion.div
+              key={f.label}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: i * 0.08 }}
+              className="bg-surface p-5 lg:p-6 col-span-12 sm:col-span-6 lg:col-span-3"
+            >
+              <div className="flex items-baseline justify-between mb-3">
+                <div
+                  className="text-[10px] font-mono uppercase tracking-widest"
+                  style={{ color: f.color }}
+                >
+                  {f.label}
+                </div>
+                <div className="font-mono tabular text-2xl font-semibold">
+                  {f.pts}
+                  <span className="text-xs text-muted"> pts</span>
+                </div>
+              </div>
+              <div className="text-xs font-mono text-muted-strong mb-3">
+                {f.sub}
+              </div>
+              <p className="text-sm text-muted leading-relaxed">{f.detail}</p>
+            </motion.div>
+          ))}
+        </div>
 
-          {/* Lane labels above bars in grid */}
-          <div className="grid grid-cols-12 gap-px mt-6">
-            {lanes.map((l, i) => (
-              <motion.div
-                key={l.label}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ delay: i * 0.08 }}
-                className={`bg-surface border border-border p-5 ${
-                  i === 0
-                    ? "col-span-12 lg:col-span-4 rounded-l-xl"
-                    : i === lanes.length - 1
-                      ? "col-span-12 lg:col-span-2 rounded-r-xl"
-                      : "col-span-12 lg:col-span-3"
-                }`}
-              >
-                <div className="flex items-baseline justify-between mb-3">
-                  <div
-                    className="text-[10px] font-mono uppercase tracking-widest"
-                    style={{ color: l.color }}
-                  >
-                    {l.label}
-                  </div>
-                  <div className="text-2xl font-mono tabular font-semibold">
-                    {l.weight}
-                    <span className="text-xs text-muted">%</span>
-                  </div>
-                </div>
-                <div className="text-xs font-mono text-muted-strong mb-3">
-                  {l.sub}
-                </div>
-                <p className="text-sm text-muted leading-relaxed">
-                  {l.detail}
-                </p>
-              </motion.div>
-            ))}
+        {/* Honest limits */}
+        <div className="mt-6 rounded-xl border border-border bg-surface/40 p-6">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-muted mb-4">
+            what the score does not model
           </div>
+          <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5">
+            {notModeled.map((x) => (
+              <li
+                key={x}
+                className="flex items-start gap-2.5 text-sm text-muted-strong leading-relaxed"
+              >
+                <span className="mt-2 w-1 h-1 rounded-full bg-border-strong flex-shrink-0" />
+                {x}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

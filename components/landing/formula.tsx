@@ -3,61 +3,53 @@
 import { motion } from "framer-motion";
 import {
   TrendingUp,
-  Gift,
-  Building2,
-  Activity,
   Droplets,
-  Fuel,
+  Building2,
+  ShieldCheck,
+  Activity,
 } from "lucide-react";
 
+// Mirrors lib/score.ts: a single 0–100 composite, all additive.
 const terms = [
   {
     sign: "+",
     label: "APY",
-    desc: "Base lending or LP yield, normalized over 30-day rolling window. No vanity numbers.",
+    desc: "Live pool yield from DeFiLlama (base + rewards), on a log curve that saturates near 30%.",
     icon: TrendingUp,
     color: "#34E0A1",
-    weight: "0.35",
+    weight: "40",
   },
   {
     sign: "+",
-    label: "Incentives",
-    desc: "Token emissions decay-adjusted. We discount unsustainable rewards toward zero.",
-    icon: Gift,
-    color: "#F4B53F",
-    weight: "0.15",
-  },
-  {
-    sign: "−",
-    label: "Protocol risk",
-    desc: "Audit count, age, TVL, exploit history. Weighted from third-party security signals.",
-    icon: Building2,
-    color: "#FF5A6B",
-    weight: "0.20",
-  },
-  {
-    sign: "−",
-    label: "Volatility",
-    desc: "Asset volatility and yield variance. Stable strategies score higher per unit of return.",
-    icon: Activity,
-    color: "#FF5A6B",
-    weight: "0.10",
-  },
-  {
-    sign: "−",
-    label: "IL exposure",
-    desc: "Impermanent loss for LP positions, simulated against current price ranges.",
+    label: "TVL",
+    desc: "Pool depth, log-scaled to $100M. Deeper, harder-to-move liquidity scores higher.",
     icon: Droplets,
-    color: "#FF5A6B",
-    weight: "0.10",
+    color: "#2F7BFF",
+    weight: "20",
   },
   {
-    sign: "−",
-    label: "Gas impact",
-    desc: "Real entry, rebalancing, and exit costs at your size. Small bags get honest math.",
-    icon: Fuel,
-    color: "#FF5A6B",
-    weight: "0.10",
+    sign: "+",
+    label: "Trust",
+    desc: "Full marks for curated blue-chip protocols; partial credit for honorable mentions.",
+    icon: Building2,
+    color: "#F4B53F",
+    weight: "15",
+  },
+  {
+    sign: "+",
+    label: "Stability",
+    desc: "Stablecoin pools with no impermanent-loss risk score highest.",
+    icon: ShieldCheck,
+    color: "#6FA5FF",
+    weight: "15",
+  },
+  {
+    sign: "+",
+    label: "Forecast",
+    desc: "DeFiLlama's Stable/Up probability that the yield holds.",
+    icon: Activity,
+    color: "#FF8A3F",
+    weight: "10",
   },
 ];
 
@@ -74,9 +66,9 @@ export function Formula() {
             <span className="gradient-text-blue">the math.</span>
           </h2>
           <p className="mt-5 text-lg text-muted-strong leading-relaxed">
-            Every strategy gets a single transparent score. Same formula for
-            stablecoins, LPs, perps, and incentive farms. You see the inputs.
-            You can argue with them.
+            Every pool gets a single 0–100 score. The same five factors apply
+            across lending, LPs, perps, and fixed yield — you see exactly what
+            each one contributes.
           </p>
         </div>
 
@@ -149,7 +141,7 @@ export function Formula() {
                     {t.label}
                   </div>
                   <div className="text-[10px] font-mono uppercase tracking-widest text-muted">
-                    w {t.weight}
+                    {t.weight} pts
                   </div>
                 </div>
                 <p className="text-sm text-muted leading-relaxed">{t.desc}</p>

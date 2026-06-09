@@ -1,59 +1,61 @@
 import type { Metadata } from "next";
 import { ArrowUpRight } from "lucide-react";
 import { PageShell, PageHeader, Section } from "@/components/site/page-shell";
+import { POOLS_SCORED } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Strategies — ArbiFlow",
   description:
-    "Live snapshot of the ranked Arbitrum strategy universe — lending, LP, vaults, fixed-yield — with risk and net APY at a glance.",
+    "The Arbitrum pool universe ArbiFlow ranks — curated protocols plus honorable mentions across lending, LP, fixed yield and perps, scored 0–100.",
 };
 
 const families = [
   {
     name: "Lending",
-    venues: ["Aave v3", "Radiant", "Silo", "Compound v3"],
-    avgApy: "4.2–6.8%",
+    venues: ["Aave v3", "Radiant", "Compound v3"],
+    apy: "4–7%",
     risk: "Low",
     tone: "mint",
   },
   {
     name: "Concentrated LP",
-    venues: ["Uniswap v3", "Pancakeswap v3", "Ramses"],
-    avgApy: "9–22%",
+    venues: ["Uniswap v3", "Camelot v3"],
+    apy: "8–20%",
     risk: "Med",
     tone: "gold",
   },
   {
-    name: "Fixed yield",
-    venues: ["Pendle PT", "Notional"],
-    avgApy: "5–11%",
+    name: "Stable LP",
+    venues: ["Curve"],
+    apy: "5–12%",
     risk: "Low–Med",
     tone: "mint",
   },
   {
-    name: "Vaults",
-    venues: ["Beefy", "Yearn", "Range"],
-    avgApy: "6–15%",
-    risk: "Med",
-    tone: "gold",
+    name: "Fixed yield",
+    venues: ["Pendle"],
+    apy: "6–11%",
+    risk: "Low–Med",
+    tone: "mint",
   },
   {
-    name: "Perps LP",
-    venues: ["GMX v2", "Gains Network"],
-    avgApy: "12–28%",
+    name: "Perps · real yield",
+    venues: ["GMX v2"],
+    apy: "10–25%",
     risk: "High",
     tone: "rose",
   },
 ];
 
+// Indicative sample — not live. A real scan ranks current pools by score.
 const sample = [
-  { protocol: "Aave v3", asset: "USDC", apy: 4.31, risk: "Low" },
-  { protocol: "Compound v3", asset: "USDC", apy: 4.18, risk: "Low" },
-  { protocol: "Silo", asset: "USDC.e / wstETH", apy: 5.64, risk: "Low" },
-  { protocol: "Radiant", asset: "USDC", apy: 6.84, risk: "Med" },
-  { protocol: "Pendle PT", asset: "ezETH", apy: 8.92, risk: "Low" },
-  { protocol: "Camelot v3", asset: "USDC / ARB", apy: 12.41, risk: "Med" },
-  { protocol: "GMX v2", asset: "GLP", apy: 14.22, risk: "High" },
+  { protocol: "Aave v3", asset: "USDC", apy: 4.31, score: 82 },
+  { protocol: "Compound v3", asset: "USDC", apy: 4.18, score: 80 },
+  { protocol: "Curve", asset: "crvUSD", apy: 7.45, score: 76 },
+  { protocol: "Pendle", asset: "USDC PT", apy: 8.92, score: 73 },
+  { protocol: "Radiant", asset: "USDC", apy: 6.84, score: 71 },
+  { protocol: "Camelot v3", asset: "USDC / ARB", apy: 12.41, score: 66 },
+  { protocol: "GMX v2", asset: "GLP", apy: 14.22, score: 64 },
 ];
 
 export default function StrategiesPage() {
@@ -63,11 +65,11 @@ export default function StrategiesPage() {
         section="[E] · Strategies"
         title={
           <>
-            Every Arbitrum yield venue, ranked by{" "}
-            <span className="gradient-text-gold">net APY.</span>
+            Every Arbitrum pool, ranked by{" "}
+            <span className="gradient-text-gold">a single score.</span>
           </>
         }
-        subtitle="The strategy universe ArbiFlow scores against. Forty venues across five families. Each one re-scored every 60 seconds against gas, volatility, and your wallet size."
+        subtitle={`The universe ArbiFlow scores: 8 curated protocols plus honorable mentions from the wider DeFiLlama feed — ${POOLS_SCORED}+ pools, refreshed every 5 minutes and ranked 0–100.`}
       />
 
       <Section number="01" label="Families" title="Five families. One score.">
@@ -86,10 +88,10 @@ export default function StrategiesPage() {
                       : "text-foreground"
                 }`}
               >
-                {f.avgApy}
+                {f.apy}
               </div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted mb-4">
-                avg net apy · risk {f.risk}
+                indicative apy · risk {f.risk}
               </div>
               <ul className="space-y-1 text-xs text-muted">
                 {f.venues.map((v) => (
@@ -101,19 +103,19 @@ export default function StrategiesPage() {
         </div>
       </Section>
 
-      <Section number="02" label="Live ranking" title="A read of the top of the book right now.">
+      <Section number="02" label="Sample ranking" title="A read of the top of the book.">
         <div className="lg:col-span-12">
           <div className="rounded-xl border border-border-strong bg-surface overflow-hidden">
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-surface-2 border-b border-border text-[10px] font-mono uppercase tracking-widest text-muted">
               <div className="col-span-1">#</div>
               <div className="col-span-4">protocol</div>
               <div className="col-span-4">asset</div>
-              <div className="col-span-2 text-right">net APY</div>
-              <div className="col-span-1 text-right">risk</div>
+              <div className="col-span-2 text-right">APY</div>
+              <div className="col-span-1 text-right">score</div>
             </div>
             <ul className="divide-y hairline">
               {[...sample]
-                .sort((a, b) => b.apy - a.apy)
+                .sort((a, b) => b.score - a.score)
                 .map((s, i) => (
                   <li
                     key={s.protocol + s.asset}
@@ -129,25 +131,25 @@ export default function StrategiesPage() {
                     <div className="col-span-4 font-mono text-sm text-muted-strong">
                       {s.asset}
                     </div>
-                    <div className="col-span-2 text-right">
+                    <div className="col-span-2 text-right font-mono tabular text-muted-strong">
+                      {s.apy.toFixed(2)}%
+                    </div>
+                    <div className="col-span-1 text-right">
                       <span
                         className={`font-mono tabular font-medium ${
                           i === 0 ? "gradient-text-gold" : ""
                         }`}
                       >
-                        {s.apy.toFixed(2)}%
+                        {s.score}
                       </span>
-                    </div>
-                    <div className="col-span-1 text-right text-[10px] font-mono uppercase tracking-widest text-muted">
-                      {s.risk}
                     </div>
                   </li>
                 ))}
             </ul>
           </div>
           <p className="mt-4 text-xs text-muted">
-            Snapshot rendered from the open-data feed. Connect a wallet to see
-            the same list re-ranked against your size and risk tolerance.
+            Indicative sample, not live. Connect a wallet to score and rank
+            current pools against your idle capital.
           </p>
         </div>
       </Section>

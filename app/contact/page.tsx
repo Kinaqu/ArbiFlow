@@ -1,40 +1,26 @@
 import type { Metadata } from "next";
-import { Mail, MessageSquare, Code2, Hash } from "lucide-react";
+import { MessageSquare, Code2 } from "lucide-react";
 import { PageShell, PageHeader, Section } from "@/components/site/page-shell";
 
 export const metadata: Metadata = {
   title: "Contact — ArbiFlow",
-  description: "How to reach the ArbiFlow team — email, social, GitHub.",
+  description: "How to reach ArbiFlow — the project is open source on GitHub.",
 };
 
 const channels = [
   {
-    icon: Mail,
-    name: "Email",
-    handle: "hi@arbiflow.xyz",
-    href: "mailto:hi@arbiflow.xyz",
-    desc: "Best for partnership, integration, and press.",
-  },
-  {
-    icon: Hash,
-    name: "Twitter / X",
-    handle: "@arbiflow",
-    href: "https://twitter.com/arbiflow",
-    desc: "Shipping updates and engine recalibrations.",
-  },
-  {
     icon: Code2,
     name: "GitHub",
-    handle: "github.com/arbiflow",
-    href: "https://github.com/arbiflow",
-    desc: "Open data, public issue tracker, contributions welcome.",
+    handle: "github.com/Kinaqu/ArbiFlow",
+    href: "https://github.com/Kinaqu/ArbiFlow",
+    desc: "Source, the on-chain demo, and the public issue tracker. The fastest way to reach us.",
   },
   {
     icon: MessageSquare,
-    name: "Telegram",
-    handle: "t.me/arbiflow",
-    href: "https://t.me/arbiflow",
-    desc: "Community chat and direct support.",
+    name: "Issues & discussion",
+    handle: "github.com/Kinaqu/ArbiFlow/issues",
+    href: "https://github.com/Kinaqu/ArbiFlow/issues",
+    desc: "Bug reports, feature requests, partnership and integration questions.",
   },
 ];
 
@@ -49,7 +35,7 @@ export default function ContactPage() {
             <span className="gradient-text-gold">team.</span>
           </>
         }
-        subtitle="No support form. Just direct channels. We read everything that comes in."
+        subtitle="No support form. The project is open source — reach us on GitHub."
       />
 
       <Section number="01" label="Channels" title="Pick the one that fits.">

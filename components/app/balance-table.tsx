@@ -206,8 +206,8 @@ export function BalanceTable({ tokens }: { tokens: ScannedToken[] }) {
           empty wallet
         </div>
         <p className="text-muted-strong">
-          No tokens detected in the Top-20 Arbitrum index for this address.
-          Bridge or fund the wallet to see balances here.
+          No tracked tokens detected for this address. Bridge or fund the
+          wallet to see balances here.
         </p>
       </div>
     );

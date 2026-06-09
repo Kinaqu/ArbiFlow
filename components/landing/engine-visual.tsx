@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Wallet, ArrowUpRight } from "lucide-react";
-import { PROTOCOL_COUNT } from "@/lib/constants";
+import { POOLS_SCORED } from "@/lib/constants";
 
 const tokens = [
   { sym: "USDC", bal: "1,840.22", idle: true, logo: "/icons/tokens/usdc.svg" },
@@ -24,7 +24,7 @@ const scoreFactors = [
   { k: "TVL", v: 20, c: "#2F7BFF" },
   { k: "Trust", v: 15, c: "#F4B53F" },
   { k: "Stability", v: 15, c: "#6FA5FF" },
-  { k: "Prediction", v: 9, c: "#FF8A3F" },
+  { k: "Forecast", v: 9, c: "#FF8A3F" },
 ];
 
 export function EngineVisual() {
@@ -147,7 +147,7 @@ export function EngineVisual() {
           ranked opportunities
         </span>
         <span className="text-[10px] font-mono text-muted">
-          {PROTOCOL_COUNT} strategies scored
+          {POOLS_SCORED}+ pools scored
         </span>
       </div>
 
@@ -198,7 +198,7 @@ export function EngineVisual() {
                   )}
                 </div>
                 <div className="text-[10px] font-mono text-muted">
-                  net APY
+                  APY
                   {i === 0 && (
                     <ArrowUpRight className="inline w-2.5 h-2.5 ml-0.5 text-gold" />
                   )}
@@ -276,9 +276,9 @@ export function EngineVisual() {
             <span className="font-medium">Aave v3</span>
           </div>
           <div className="text-[10px] font-mono text-muted mt-1">
-            net APY <span className="text-foreground">4.31%</span>
+            APY <span className="text-foreground">4.31%</span>
             <span className="mx-1.5">·</span>
-            <span className="text-mint">+$184/yr</span>
+            <span className="text-mint">+$79/yr</span>
             <span className="mx-1.5">·</span>1 signature
           </div>
         </div>

@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ConnectButton } from "@/components/wallet/connect-button";
 import { ShapeBlurLayer } from "./shape-blur-layer";
-import { PROTOCOL_COUNT } from "@/lib/constants";
+import { POOLS_SCORED } from "@/lib/constants";
 
 export function CTA() {
   return (
@@ -93,7 +93,7 @@ export function CTA() {
                     <span className="text-mint"> ✓</span>
                   </div>
                   <div className="text-muted-strong">
-                    → indexing {PROTOCOL_COUNT} protocols
+                    → scoring {POOLS_SCORED}+ pools
                     <span className="text-mint"> ✓</span>
                   </div>
                   <div className="text-muted-strong">
@@ -108,8 +108,8 @@ export function CTA() {
                     <div className="text-muted text-xs mb-1">
                       idle: <span className="gradient-text-gold">$2,340</span>
                       {"  ·  "}
-                      potential uplift:{" "}
-                      <span className="text-mint">+$184/yr</span>
+                      top score:{" "}
+                      <span className="text-mint">82 / 100</span>
                     </div>
                     <div className="text-foreground">
                       best score → <span className="text-accent">Aave v3 USDC</span>
