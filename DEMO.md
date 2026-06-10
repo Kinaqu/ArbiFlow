@@ -2,6 +2,7 @@
 
 **Live app:** https://arbiflow-one.vercel.app
 **Demo video:** _add link (Loom / YouTube)_
+**Pitch script:** [`PITCH.md`](PITCH.md) — ~2-min voiceover film (problem → moat → proof → vision)
 
 > One-liner: *ArbiFlow scans your Arbitrum wallet, ranks every yield by a 0–100 risk-adjusted score, and — through a non-custodial delegation vault — auto-rebalances your capital while the chain guarantees it can never take it.*
 
