@@ -6,6 +6,7 @@
   "scripts": {
     "studio": "remotion studio",
     "render": "remotion render ArbiFlowDemo out/arbiflow-demo.mp4",
+    "render:pitch": "remotion render ArbiFlowPitch out/arbiflow-pitch.mp4",
     "still": "remotion still ArbiFlowDemo out/frame.png",
     "typecheck": "tsc --noEmit"
   },

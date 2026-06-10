@@ -16,7 +16,7 @@ const Check: React.FC = () => (
   </svg>
 );
 
-const GUARANTEES = [
+export const GUARANTEES = [
   { t: "Whitelisted targets only", s: "Every rebalance must hit a target you approved — nothing else." },
   { t: "Value floor on every move", s: "Portfolio value can't drop more than ~1% across a batch." },
   { t: "Owner-only withdrawals", s: "Only you can withdraw. emergencyWithdraw works even if the keeper goes dark." },
@@ -26,7 +26,7 @@ const X0 = 268;
 const CW = 440;
 const GAP = 32;
 
-const GuaranteeCard: React.FC<{ g: { t: string; s: string }; i: number }> = ({ g, i }) => {
+export const GuaranteeCard: React.FC<{ g: { t: string; s: string }; i: number }> = ({ g, i }) => {
   const p = useEnter(20 + i * 8, 16);
   return (
     <div

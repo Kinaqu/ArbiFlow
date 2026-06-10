@@ -65,3 +65,90 @@ export const TX = {
   r2: "0x7c0f2a9b4e3d1c8a6f5b2e9d0a4c7b1e8f3d6a9c2b5e8d1f4a7c0b3e6d9f2a5c",
   r3: "0x3e8a1d6c9b2f5a8e0d3c6b9f2a5e8d1c4b7a0e3d6f9c2b5a8e1d4c7b0f3a6e9d",
 } as const;
+
+// ---- Pitch video (PITCH.md beats) ------------------------------------------
+
+// Beat 1 — problem stat cards (components/landing/problem.tsx).
+export const PROBLEM_STATS = [
+  {
+    v: "500+",
+    l: "Arbitrum yield pools to compare — lending, LPs, perps, fixed yield",
+    src: "DeFiLlama",
+  },
+  {
+    v: "3–14%",
+    l: "the USDC yield range across them; the wrong pick leaves money idle",
+    src: "DeFiLlama",
+  },
+  { v: "0%", l: "what stablecoins earn sitting untouched in your wallet", src: "" },
+] as const;
+
+// Beat 5 — "what's real" proof cards (components/landing/whats-real.tsx).
+export const WHATS_REAL = [
+  {
+    badge: "live · arbitrum mainnet",
+    color: C.mint,
+    title: "Intelligence layer",
+    body: "Scans your wallet and ranks ~500 Arbitrum pools by a 0–100 risk-adjusted score — real DeFiLlama + on-chain data, no mocks.",
+    foot: "arbiflow-one.vercel.app/app",
+  },
+  {
+    badge: "testnet · arbitrum sepolia",
+    color: C.gold,
+    title: "Delegation vault, auto-rebalancing",
+    body: "A non-custodial per-user vault a keeper rebalances every ~35s — backend-signed, whitelist-guarded, value floor on every move.",
+    foot: "live demo vault ↗",
+  },
+  {
+    badge: "foundry · mainnet fork",
+    color: C.blueLight,
+    title: "Proven vs. real Aave V3",
+    body: "The same guarded rebalance, executed against the real Aave V3 pool on an Arbitrum One fork — value floor holding throughout.",
+    foot: "test/RebalanceForkAave.t.sol ✓",
+  },
+] as const;
+
+// Beat 5 — stylized explorer rows: real tx hashes (TX above), presentation ages/blocks.
+export const ARBISCAN_ROWS = [
+  { method: "Rebalance", hash: TX.r3, block: "145208841", age: "12 secs ago" },
+  { method: "Rebalance", hash: TX.r2, block: "145208722", age: "47 secs ago" },
+  { method: "Rebalance", hash: TX.rebalance, block: "145208584", age: "1 min ago" },
+  { method: "Deposit", hash: TX.deposit, block: "145208347", age: "2 mins ago" },
+] as const;
+
+// Beat 5 — forge terminal (real test names from contracts/test/RebalanceForkAave.t.sol).
+export const FORGE_CMD = "forge test --match-path test/RebalanceForkAave.t.sol";
+export const FORGE_LINES = [
+  {
+    text: "Ran 2 tests for test/RebalanceForkAave.t.sol:RebalanceForkAaveTest",
+    tone: "muted",
+  },
+  { text: "[PASS] test_RebalanceSuppliesToRealAave() (gas: 412388)", tone: "mint" },
+  { text: "[PASS] test_RoundTripThroughRealAave() (gas: 498117)", tone: "mint" },
+  {
+    text: "Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 3.21s",
+    tone: "mint",
+  },
+] as const;
+
+// Beat 6 — roadmap nodes (today → testnet → future).
+export const ROADMAP = [
+  {
+    when: "Today",
+    title: "Intelligence layer",
+    sub: "Live on Arbitrum mainnet — real data, one-signature deploys.",
+    color: C.mint,
+  },
+  {
+    when: "Now",
+    title: "Delegation vault",
+    sub: "Auto-rebalancing on Arbitrum Sepolia — guarded by the chain.",
+    color: C.gold,
+  },
+  {
+    when: "Next",
+    title: "Mainnet autopilot",
+    sub: "Every protocol you trust — non-custodial, on mainnet.",
+    color: C.blueLight,
+  },
+] as const;

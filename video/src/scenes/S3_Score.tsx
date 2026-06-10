@@ -77,7 +77,7 @@ export const Score: React.FC = () => {
   );
 };
 
-const RankRow: React.FC<{ r: (typeof RANKED)[number]; at: number }> = ({ r, at }) => {
+export const RankRow: React.FC<{ r: (typeof RANKED)[number]; at: number }> = ({ r, at }) => {
   const p = useEnter(at, 14);
   return (
     <div

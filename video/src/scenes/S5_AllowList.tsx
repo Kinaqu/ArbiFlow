@@ -13,7 +13,7 @@ import { cardLeft } from "../layout";
 const TOP = 446;
 
 // Illustrative per-protocol demo scores + mini factor bars (mirrors the board).
-const CARDS = [
+export const CARDS = [
   {
     p: DEMO_PROTOCOLS[0],
     score: 74.2,
