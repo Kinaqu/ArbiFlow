@@ -9,7 +9,7 @@ Arbitrum-native · 0–100 composite score · non-custodial
 [![Vault: testnet](https://img.shields.io/badge/Delegation%20vault-Arbitrum%20Sepolia-F4B53F)](https://sepolia.arbiscan.io/address/0xB2AA9601b085350fD0eE12697C829BBa51f4d56E)
 [![License: MIT](https://img.shields.io/badge/License-MIT-34E0A1)](#license)
 
-**🔗 [Live app](https://arbiflow-one.vercel.app)** · 🔍 [Live demo vault on Arbiscan](https://sepolia.arbiscan.io/address/0xB2AA9601b085350fD0eE12697C829BBa51f4d56E) · 🧱 [Architecture](https://arbiflow-one.vercel.app/architecture) · 📡 [API docs](https://arbiflow-one.vercel.app/api-docs) · 🎬 Demo video: _add link_
+**🔗 [Live app](https://arbiflow-one.vercel.app)** · 🔍 [Live demo vault on Arbiscan](https://sepolia.arbiscan.io/address/0xB2AA9601b085350fD0eE12697C829BBa51f4d56E) · 🧱 [Architecture](https://arbiflow-one.vercel.app/architecture) · 📡 [API docs](https://arbiflow-one.vercel.app/api-docs) · 🎬 [Demo video](https://drive.google.com/file/d/1J9JCzk54D_c0BYUe9wyKUDHkyv0UiNUj/view?usp=sharing) · 🎤 [Pitch video](https://drive.google.com/file/d/181qr7Ve07gU8vA67fENad8m88hfzc_f3/view?usp=sharing)
 
 </div>
 
