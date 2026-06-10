@@ -1,7 +1,8 @@
 # ArbiFlow — 2-minute demo
 
 **Live app:** https://arbiflow-one.vercel.app
-**Demo video:** _add link (Loom / YouTube)_
+**Demo video:** [▶️ Watch on Google Drive ↗](https://drive.google.com/file/d/1J9JCzk54D_c0BYUe9wyKUDHkyv0UiNUj/view?usp=sharing) — ~90s product walkthrough
+**Pitch video:** [▶️ Watch on Google Drive ↗](https://drive.google.com/file/d/181qr7Ve07gU8vA67fENad8m88hfzc_f3/view?usp=sharing) — ~2-min judge pitch
 
 > One-liner: *ArbiFlow scans your Arbitrum wallet, ranks every yield by a 0–100 risk-adjusted score, and — through a non-custodial delegation vault — auto-rebalances your capital while the chain guarantees it can never take it.*
 
